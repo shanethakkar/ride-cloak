@@ -40,6 +40,10 @@ the measured bound.
   the article. RideCloak presents k-anonymity as risk *reduction* with a measured before/after
   uniqueness metric, never as a solved problem. (Documented the way EdgarRisk documented its
   blind spots.)
+- **Measured bound (Phase 3, full 2026-04 month, 15.4M rows):** uniqueness falls from 90.1%
+  (zone x minute) to 0.06% (borough x 15-min); at zone x 15-min k=5 suppresses 85% of rows
+  (zone-level k-anon is infeasible), while at borough x 15-min k=5 suppresses only 0.26%.
+  Generalization, not k alone, is the lever. See [findings/phase-3.md](findings/phase-3.md).
 
 ## L-03 — Presidio does not guarantee total recall
 - **Limitation:** The PII detection stage will miss some real PII spans; recall is < 100%.
@@ -96,4 +100,4 @@ the measured bound.
 
 ## Metrics to backfill (replace "TBD" with measured values as phases complete)
 - ~~L-03: per-entity precision / recall / F1 (Phase 2).~~ Done (see L-03).
-- L-02: before/after re-identification uniqueness at the chosen k (Phase 3).
+- ~~L-02: before/after re-identification uniqueness at the chosen k (Phase 3).~~ Done (see L-02).

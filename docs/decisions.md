@@ -59,7 +59,7 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
 - **Open parameters and their working defaults:**
   | Parameter | Working default | Decided in |
   |---|---|---|
-  | k-anonymity threshold | k = 5 | Phase 3 |
+  | k-anonymity threshold | k = 5 | **Resolved D-0008** (default; final per-profile in Phase 4) |
   | TLC profile time bucket | 15 min | Phase 4 |
   | MDS profile time bucket | 60 min | Phase 4 |
   | First data month | most recent available (TLC ~2-month publish delay → ~2026-03/04, verify at Phase 0) | Phase 0 |
@@ -100,6 +100,35 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
 - **Alternatives:** strict hard-fail (rejected — fails real data, needs a quarantine step);
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
+
+## D-0008 — Phase 3 transform engine & the zone-level k-anonymity finding
+- **Date:** 2026-06-09
+- **Status:** Accepted (k default closes the D-0003 k row)
+- **Headline finding (profiled on the dev slice).** Raw zone-level trip data **cannot be
+  k-anonymized without generalization**: uniqueness on PU×DO zone × pickup time is 99.8%
+  (minute), 97.1% (15-min), 90.4% (60-min); k=5 on that QI suppresses ~100% of rows. Rolling
+  zones up to **borough** collapses uniqueness to 5.4% (15-min) / 1.1% (60-min), making k-anon
+  viable: k=5 then costs ~23% (15-min) / ~4.7% (60-min) suppression. **Generalization is the
+  primary privacy lever; k-anonymity is applied after generalization.** This is the de Montjoye
+  result made concrete and the spine of the article.
+- **Decisions:**
+  1. **k = 5 default** (configurable param; the final per-profile k is set in Phase 4).
+  2. **`risk` default QI = PU×DO zone × 15-min** (SPEC default). The command reports the full
+     ladder (minute → 15-min → 60-min → borough) so the ~100% zone-level suppression is shown
+     honestly as the core finding, not hidden behind a pre-generalized default.
+  3. **support_note → redact detected PII spans** on export: build a redaction transform that
+     masks the Presidio-detected spans in place (integrates Phase 2 detection into the transform
+     pipeline), keeping non-PII text. (A second-pass re-scan of agent output is a Phase 6
+     guardrail.)
+  4. **k-suppression = drop records** in classes smaller than k (record suppression);
+     `cells_suppressed` = rows removed.
+  5. **Pseudonymization = salted SHA-256**, one salt generated per export run, stored only in
+     `secrets/salts/` (gitignored), referenced in the ledger by SHA-256 **fingerprint** of the
+     salt. Same salt → same pseudonyms (joinable within a release); different salt → disjoint.
+- **Why:** the profiling shows k alone is not the lever (zone granularity dominates); honesty
+  rules require showing the stark zone-level result rather than masking it; redaction showcases
+  the detection→transform link and is the strongest demo; record-drop is the standard k-anon
+  mechanism for row-level releases.
 
 ## D-0007 — Phase 2 classification & PII detection design
 - **Date:** 2026-06-09

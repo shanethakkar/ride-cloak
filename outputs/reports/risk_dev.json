@@ -1,0 +1,44 @@
+{
+  "bucket_min": 15,
+  "k": 5,
+  "ladder": [
+    {
+      "qi": "zone x minute",
+      "uniqueness": 0.998
+    },
+    {
+      "qi": "zone x 15min",
+      "uniqueness": 0.9712
+    },
+    {
+      "qi": "zone x 60min",
+      "uniqueness": 0.9042
+    },
+    {
+      "qi": "borough x 15min",
+      "uniqueness": 0.0537
+    }
+  ],
+  "rows": 250000,
+  "source": "dev",
+  "suppression": [
+    {
+      "cells_suppressed": 249990,
+      "k": 5,
+      "k_achieved": 5,
+      "qi": "zone x 15min",
+      "rows_in": 250000,
+      "rows_out": 10,
+      "suppressed": 1.0
+    },
+    {
+      "cells_suppressed": 58409,
+      "k": 5,
+      "k_achieved": 5,
+      "qi": "borough x 15min",
+      "rows_in": 250000,
+      "rows_out": 191591,
+      "suppressed": 0.2336
+    }
+  ]
+}

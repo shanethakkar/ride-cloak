@@ -247,5 +247,126 @@ def _print_classification_summary(result: dict) -> None:
     console.print(f"targets recall>={t['recall']} precision>={t['precision']} -> {verdict}")
 
 
+@main.command()
+@click.option(
+    "--input",
+    "input_sel",
+    required=True,
+    type=click.Choice(["dev", "month"]),
+    help="'dev' assesses the dev slice in pandas; 'month' assesses at scale in DuckDB.",
+)
+@click.option("--month", default=None, help="Required when --input month (YYYY-MM).")
+@click.option("--qi", default=None, help="Custom quasi-identifier, comma-separated (dev only).")
+@click.option("--bucket-min", default=None, type=int, help="Time-bucket size in minutes.")
+def risk(input_sel: str, month: str | None, qi: str | None, bucket_min: int | None) -> None:
+    """Report the re-identification uniqueness ladder and k-suppression cost."""
+    from pipeline.io import readers, writers
+    from pipeline.transform import risk as risk_mod
+
+    settings = get_settings()
+    k = settings.k_default
+    bucket = bucket_min or settings.bucket_min_default
+    if input_sel == "month" and not month:
+        raise click.UsageError("--input month requires --month YYYY-MM.")
+
+    if input_sel == "dev":
+        source = "dev"
+        df = readers.read_parquet(settings.dev_slice_path)
+        zl = readers.read_csv(settings.zone_lookup_path)
+        lookup = dict(zip(zl["LocationID"], zl["Borough"], strict=True))
+        custom_qi = None
+        if qi:
+            try:
+                custom_qi = [risk_mod.QI_TOKENS[t.strip()] for t in qi.split(",")]
+            except KeyError as exc:
+                raise click.UsageError(
+                    f"Unknown --qi token {exc}; allowed: {sorted(risk_mod.QI_TOKENS)}"
+                ) from exc
+        result = risk_mod.assess_dev(df, lookup, bucket, k, custom_qi=custom_qi)
+    else:
+        source = f"month:{month}"
+        result = _risk_month(month, bucket, k, settings)
+
+    result["source"] = source
+    stem = f"risk_{source.replace(':', '_')}"
+    json_path = writers.write_json(settings.reports_dir / f"{stem}.json", result)
+    md_path = writers.write_text(
+        settings.reports_dir / f"{stem}.md", risk_mod.render_markdown(result)
+    )
+    _print_risk_summary(result)
+    console.print(f"report -> {json_path}")
+    console.print(f"report -> {md_path}")
+
+
+def _risk_month(month: str, bucket: int, k: int, settings) -> dict:
+    from pipeline.io import duck
+    from pipeline.transform import kanon
+    from pipeline.transform import risk as risk_mod
+
+    raw = settings.raw_parquet_path(month).as_posix()
+    lk = settings.zone_lookup_path.as_posix()
+    con = duck.connect()
+    try:
+        con.execute(f"CREATE VIEW z AS SELECT LocationID, Borough FROM read_csv('{lk}')")
+        con.execute(
+            f"CREATE VIEW j AS SELECT d.PULocationID AS pu, d.DOLocationID AS do_id, "
+            f"zp.Borough AS pb, zd.Borough AS db, d.pickup_datetime AS pickup_datetime "
+            f"FROM (SELECT * FROM read_parquet('{raw}') "
+            f"WHERE hvfhs_license_num = '{settings.uber_license_num}') d "
+            f"JOIN z zp ON d.PULocationID = zp.LocationID "
+            f"JOIN z zd ON d.DOLocationID = zd.LocationID"
+        )
+        total = int(con.execute("SELECT count(*) FROM j").fetchone()[0])
+        ladder = [
+            {
+                "qi": label,
+                "uniqueness": round(con.execute(kanon.uniqueness_sql("j", e)).fetchone()[0], 4),
+            }
+            for label, e in risk_mod.month_ladder_exprs(bucket)
+        ]
+        suppression = []
+        for label, exprs in risk_mod.month_suppression_exprs(bucket):
+            supp = con.execute(kanon.suppression_sql("j", exprs, k)).fetchone()[0]
+            kach = con.execute(kanon.k_achieved_sql("j", exprs, k)).fetchone()[0]
+            rows_out = int(round(total * (1 - supp)))
+            suppression.append(
+                {
+                    "qi": label,
+                    "k": k,
+                    "rows_in": total,
+                    "rows_out": rows_out,
+                    "cells_suppressed": total - rows_out,
+                    "suppressed": round(supp, 4),
+                    "k_achieved": int(kach) if kach is not None else None,
+                }
+            )
+    finally:
+        con.close()
+    return {
+        "bucket_min": bucket,
+        "k": k,
+        "rows": total,
+        "ladder": ladder,
+        "suppression": suppression,
+    }
+
+
+def _print_risk_summary(result: dict) -> None:
+    ladder = Table(title=f"Uniqueness ladder — {result['source']}")
+    ladder.add_column("quasi-identifier")
+    ladder.add_column("uniqueness", justify="right")
+    for rung in result["ladder"]:
+        ladder.add_row(rung["qi"], f"{rung['uniqueness']:.2%}")
+    console.print(ladder)
+
+    supp = Table(title=f"k-anonymity suppression (k={result['k']})")
+    supp.add_column("quasi-identifier")
+    supp.add_column("suppressed", justify="right")
+    supp.add_column("rows out", justify="right")
+    for s in result["suppression"]:
+        supp.add_row(s["qi"], f"{s['suppressed']:.2%}", f"{s['rows_out']:,}")
+    console.print(supp)
+
+
 if __name__ == "__main__":
     main()

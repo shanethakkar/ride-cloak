@@ -67,7 +67,10 @@ ingest → validate → classify → transform → export → attest
 - **k-anonymity**: equivalence classes are computed in DuckDB SQL over a configurable
   quasi-identifier tuple (default `PULocationID × DOLocationID × pickup time bucket`); rows in
   classes smaller than k are suppressed. The guarantee is syntactic and has known weaknesses
-  (see [limitations.md](limitations.md) L-02).
+  (see [limitations.md](limitations.md) L-02). **Empirically (Phase 3), k-anonymity is only
+  viable *after* generalization:** raw zone-level QIs are so sparse that k=5 suppresses ~85% of
+  a full month, whereas a borough rollup brings uniqueness to ~0.06% and k=5 suppression to
+  ~0.26%. Generalization is the dominant lever; k is the floor applied on top of it.
 
 ## 4. Threat model
 

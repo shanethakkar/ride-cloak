@@ -13,16 +13,18 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 2** (2026-06-09) — classification dictionary (all 36 columns
-  tiered) + Presidio detection over the synthetic notes. Extended synth to 8 entity types;
-  6 custom recognizers + overlap deconfliction. Measured **overall precision 0.997, recall
-  0.998** vs ground truth (targets 0.90/0.95 cleared with margin). `pytest` (51 passed), ruff
-  green. See [findings/phase-2.md](findings/phase-2.md).
-- **Phases completed:** 0, 1, 2.
-- **Next step:** Begin **Phase 3** — transform engine: suppression, salted-SHA-256
-  pseudonymization (per-export salt + ledger fingerprint), temporal rounding, spatial rollup,
-  and k-anonymity (equivalence classes in DuckDB SQL, small-cell suppression, before/after
-  uniqueness). **Decides final k (default 5).**
+- **Last completed:** **Phase 3** (2026-06-09) — transform engine: generalization, salted-SHA-256
+  pseudonymization, suppression + span redaction, k-anonymity. `ridecloak risk` reports the
+  uniqueness ladder + k-suppression cost (dev pandas, month via DuckDB in 4.3s, no pandas).
+  **Headline:** full-month uniqueness 90.1% (zone×min) → 0.06% (borough×15min); zone-level k=5
+  suppresses 85%, borough×15min only 0.26% — generalization is the lever. `pytest` (64 passed),
+  ruff green. See [findings/phase-3.md](findings/phase-3.md).
+- **Phases completed:** 0, 1, 2, 3.
+- **Next step:** Begin **Phase 4** — export profiles: three YAML policies (TLC row-level
+  pseudonymized; MDS borough/zone aggregate k-suppressed; LE minimal + approval), pydantic
+  policy schema, policy→ordered-transform-plan compiler, runner that refuses on failed
+  certification or missing LE approval. **Sets per-profile k and time buckets** (TLC 15-min /
+  MDS 60-min defaults).
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
@@ -152,17 +154,52 @@ enforces no unclassified columns.
 **Decided:** extend synth & measure custom recognizers; `en_core_web_lg`; disability flags
 sensitive; overlap+type match (all D-0007).
 
-### ☐ Phase 3 — Transform engine  (est. 3 days)
-Build: suppression; salted SHA-256 pseudonymization (per-export salt + ledger fingerprint);
-temporal rounding (param: minutes); spatial rollup zone→borough (param); k-anonymity over a
-configurable QI tuple (default `PULocationID × DOLocationID × pickup bucket`) with
-equivalence-class computation in DuckDB SQL and small-cell suppression below k; uniqueness
-metric (share of size-1 classes) before and after.
-**Accept when:** all transforms are pure functions with unit tests on hand-crafted fixtures
-(incl. a fixture where exactly one known cell falls below k); same salt = same pseudonyms,
-different salt = disjoint (test); `ridecloak risk --input dev` prints before/after uniqueness at
-minute-level vs bucketed; full-month run completes without loading raw parquet into pandas.
-**Decides:** final k (default 5).
+### ☑ Phase 3 — Transform engine  (done 2026-06-09)
+
+**Result: full-month uniqueness 90.1%→0.06% (zone→borough); zone-level k=5 suppresses 85%,
+borough×15min 0.26%. 64 tests pass.** Findings: [findings/phase-3.md](findings/phase-3.md).
+Design below (decisions D-0008). Default k=5; generalization is the main lever.
+
+Modules under `pipeline/transform/` (pure core: DataFrame in → DataFrame + audit-dict out):
+- **`suppress.py`** — drop columns (whole-field suppression) and **redact spans**: mask the
+  Presidio-detected PII spans in `support_note` in place (consumes Phase 2 `pii_scan`
+  detections), keeping non-PII text. Returns redacted text + count of spans masked.
+- **`pseudonymize.py`** — salted SHA-256 over a column/value. `generate_salt()` (per export run),
+  `salt_fingerprint()` = SHA-256 of the salt; `pseudonymize(series, salt)` → hex digest
+  (truncation length a param, default 16 hex). Same salt → same pseudonyms; different → disjoint.
+  Salt I/O (write to `secrets/salts/`) lives in the I/O layer, not here.
+- **`generalize.py`** — `round_time(series, minutes)` (floor to N-min bucket) and
+  `rollup_zone(series, lookup)` (zone → borough via the taxi-zone lookup). Both pure.
+- **`kanon.py`** — `equivalence_sizes(df, qi)` (pandas groupby, dev), `suppress_below_k(df, qi, k)`
+  (drop rows in classes < k; audit: rows_in, rows_out, cells_suppressed, k_achieved),
+  `uniqueness(df, qi)` (share of rows in size-1 classes). Plus `kanon_sql(view, qi, k)` /
+  `uniqueness_sql(view, qi)` — pure SQL builders so the **full-month run computes
+  equivalence classes in DuckDB without loading parquet into pandas** (mirrors the Phase 1
+  dual-path pattern).
+
+CLI **`ridecloak risk --input <dev|month> [--qi ...] [--bucket-min 15]`**: default QI =
+`PULocationID × DOLocationID × pickup-bucket` (D-0008). Reports the **uniqueness ladder** —
+minute → 15-min → 60-min → borough×borough — plus k-suppression cost at k, before/after. Dev
+path uses pandas; month path uses the DuckDB SQL builders (scale-safe). Writes
+`outputs/reports/risk_<input>.{json,md}` + Rich summary. The honest core result: zone-level data
+is ~97% unique and k-anon suppresses ~100% there; borough rollup makes it viable.
+
+Profiled reference numbers (dev slice, for the report/tests): minute 99.8% / 15-min 97.1% /
+60-min 90.4% / borough×borough×15-min 5.4% unique; borough k=5 suppression ~23% (15-min) /
+~4.7% (60-min).
+
+Tests (`test_transform.py`, `test_kanon.py`): each transform pure with hand-crafted fixtures —
+**a fixture where exactly one known cell falls below k**; same-salt-same-pseudonym /
+different-salt-disjoint; round_time floors correctly; zone→borough maps via lookup; redaction
+masks the right offsets; uniqueness computed correctly before/after; SQL builders parse and
+match the pandas path on a small fixture.
+
+**Accept when:** all transforms are pure with unit tests (incl. the exactly-one-below-k
+fixture); same salt = same pseudonyms, different salt = disjoint; `ridecloak risk --input dev`
+prints before/after uniqueness at minute-level vs bucketed; full-month run completes without
+loading raw parquet into pandas.
+**Decided (D-0008):** k=5 default; raw-zone default QI with full ladder; redact support_note
+spans; record-drop suppression; salted-SHA-256 + per-export salt fingerprint.
 
 ### ☐ Phase 4 — Export profiles  (est. 2 days)
 Build: three YAML policies — TLC trip submission (row-level, pseudonymized, 15-min rounding,

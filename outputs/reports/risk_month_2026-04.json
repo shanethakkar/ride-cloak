@@ -1,0 +1,44 @@
+{
+  "bucket_min": 15,
+  "k": 5,
+  "ladder": [
+    {
+      "qi": "zone x minute",
+      "uniqueness": 0.9008
+    },
+    {
+      "qi": "zone x 15min",
+      "uniqueness": 0.4605
+    },
+    {
+      "qi": "zone x 60min",
+      "uniqueness": 0.216
+    },
+    {
+      "qi": "borough x 15min",
+      "uniqueness": 0.0006
+    }
+  ],
+  "rows": 15378858,
+  "source": "month:2026-04",
+  "suppression": [
+    {
+      "cells_suppressed": 13116915,
+      "k": 5,
+      "k_achieved": 5,
+      "qi": "zone x 15min",
+      "rows_in": 15378858,
+      "rows_out": 2261943,
+      "suppressed": 0.8529
+    },
+    {
+      "cells_suppressed": 40145,
+      "k": 5,
+      "k_achieved": 5,
+      "qi": "borough x 15min",
+      "rows_in": 15378858,
+      "rows_out": 15338713,
+      "suppressed": 0.0026
+    }
+  ]
+}

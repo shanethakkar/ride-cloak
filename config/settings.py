@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     # Validation gate (Phase 1): export refused below this 0-100 health score.
     gate_threshold: int = Field(default=90, ge=0, le=100)
 
+    # k-anonymity default (Phase 3; decisions.md D-0008). Final per-profile k set in Phase 4.
+    k_default: int = Field(default=5, ge=2)
+    # Default time-bucket for the risk ladder, in minutes.
+    bucket_min_default: int = 15
+
     # Phase 6 only. Never logged.
     anthropic_api_key: str | None = None
 

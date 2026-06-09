@@ -115,12 +115,13 @@ Python 3.12 via **uv** (`uv init`, `uv add`, commit `uv.lock`). Presidio needs a
 accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first.
 
 ## Current State
-- **Phases 0–2 complete (2026-06-09).** P0: scaffold, ingest, synthetic PII layer + labels,
-  250K dev slice. P1: two-tier validation gate (Pandera + equal-weighted 0–100 score), dev +
-  scale-safe month paths. P2: classification dictionary (all 36 columns tiered) + Presidio
-  detection over the synthetic notes — 8 entity types, 6 custom recognizers, measured **overall
-  precision 0.997, recall 0.998** vs ground truth. 51 tests pass, ruff green.
-- **Next step:** Phase 3 — transform engine: suppression, salted-SHA-256 pseudonymization,
-  temporal rounding, spatial rollup, k-anonymity (equivalence classes in DuckDB SQL, small-cell
-  suppression, before/after uniqueness). Decides final k. See [docs/plan.md](docs/plan.md).
+- **Phases 0–3 complete (2026-06-09).** P0: scaffold, ingest, synthetic PII layer + labels,
+  250K dev slice. P1: two-tier validation gate. P2: classification + Presidio detection
+  (precision 0.997, recall 0.998 vs ground truth). P3: transform engine (generalization,
+  salted-SHA-256 pseudonymization, suppression+redaction, k-anonymity) + `ridecloak risk`.
+  Headline: full-month uniqueness 90.1%→0.06% (zone→borough); zone-level k-anon infeasible.
+  64 tests pass, ruff green.
+- **Next step:** Phase 4 — export profiles (TLC / MDS / LE YAML policies, pydantic schema,
+  policy→transform-plan compiler, runner with gate + approval enforcement). Sets per-profile k
+  and time buckets. See [docs/plan.md](docs/plan.md).
 - **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.
