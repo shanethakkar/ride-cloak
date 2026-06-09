@@ -20,6 +20,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.8",
     "pydantic-settings>=2.5",
+    "pandera>=0.31.1",
 ]
 
 [project.scripts]
@@ -37,8 +38,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pipeline", "config", "policies"]
-# cli.py is a top-level module, not a package; force-include it into the wheel root.
-force-include = { "cli.py" = "cli.py" }
+# Expose the repo root on the editable path so the top-level cli.py module
+# (the `ridecloak` entrypoint) loads from source and reflects edits live without
+# a re-sync. A non-editable wheel build would also need cli.py; revisit then.
+dev-mode-dirs = ["."]
 
 [tool.ruff]
 line-length = 100

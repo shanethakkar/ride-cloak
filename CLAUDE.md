@@ -115,9 +115,11 @@ Python 3.12 via **uv** (`uv init`, `uv add`, commit `uv.lock`). Presidio needs a
 accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first.
 
 ## Current State
-- **Phase 0 complete (2026-06-09):** repo scaffolded (uv), ingest + manifest, schema
-  introspection, synthetic PII layer + labels, deterministic 250K dev slice. 13 tests pass,
-  ruff green. First month locked: 2026-04 (15.4M Uber rows). `ridecloak fetch` and
-  `ridecloak synth --input dev` work end to end.
-- **Next step:** Phase 1 — Pandera contract from `data/raw/manifests/schema_2026-04.json`,
-  cross-field checks, 0–100 health score + gate. See [docs/plan.md](docs/plan.md).
+- **Phases 0–1 complete (2026-06-09).** Phase 0: scaffold, ingest + manifest, schema
+  introspection, synthetic PII layer + labels, deterministic 250K dev slice. Phase 1: two-tier
+  validation gate (Pandera Tier-1 + equal-weighted 0–100 score), dev + scale-safe month paths
+  (full 15.4M-row month validates in 5.5s, no pandas). Clean data scores 99.99; corrupted
+  fixture 78.83 (refused). 30 tests pass, ruff green.
+- **Next step:** Phase 2 — `classification.yaml` tiering every column; Presidio over
+  `support_note` + custom recognizers (TLC license, NY plate, VIN); precision/recall/F1 vs
+  `labels.parquet` (target recall ≥ 0.95, precision ≥ 0.90). See [docs/plan.md](docs/plan.md).

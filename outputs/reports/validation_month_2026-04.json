@@ -1,0 +1,35 @@
+{
+  "counts": {
+    "completeness": {
+      "null_cells": 0,
+      "null_per_col": {},
+      "total_cells": 384471450
+    },
+    "consistency": {
+      "fail_rows": 561,
+      "rules": {}
+    },
+    "n": 15378858,
+    "uniqueness": {
+      "duplicate_rows": 0
+    },
+    "validity": {
+      "fail_rows": 5431,
+      "rules": {}
+    }
+  },
+  "dimensions": {
+    "completeness": 100.0,
+    "consistency": 99.9964,
+    "uniqueness": 100.0,
+    "validity": 99.9647
+  },
+  "gate_threshold": 90,
+  "health_score": 99.9903,
+  "reason": null,
+  "refused": false,
+  "rows": 15378858,
+  "source": "month:2026-04",
+  "structural_failures": [],
+  "tier1_passed": true
+}

@@ -13,15 +13,17 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 0** (2026-06-09) — repo scaffold, uv env, ingest + manifest,
-  schema introspection, synthetic PII layer + labels, deterministic 250K dev slice. `pytest`
-  (13 passed) and `ruff` green; `ridecloak fetch` + `ridecloak synth --input dev` run clean.
-  See [findings/phase-0.md](findings/phase-0.md).
-- **Phases completed:** 0.
-- **Next step:** Begin **Phase 1** — Pandera contract built from
-  `data/raw/manifests/schema_2026-04.json`, cross-field checks, 0–100 health score, gate.
+- **Last completed:** **Phase 1** (2026-06-09) — two-tier validation gate (Pandera Tier-1 +
+  equal-weighted 0–100 health score), dev + scale-safe month paths. Clean 2026-04 scores 99.99
+  (dev and full 15.4M-row month, the latter in 5.5s via DuckDB single-pass, no pandas);
+  corrupted fixture scores 78.83 and is refused. `pytest` (30 passed) and `ruff` green.
+  See [findings/phase-1.md](findings/phase-1.md).
+- **Phases completed:** 0, 1.
+- **Next step:** Begin **Phase 2** — `classification.yaml` tiering every column; Presidio over
+  `support_note` + custom recognizers (TLC license, NY plate, VIN); precision/recall/F1 vs the
+  `labels.parquet` ground truth (target recall ≥ 0.95, precision ≥ 0.90).
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
-  extra months → Shane). Month locked: 2026-04 (D-0004).
+  extra months → Shane). Month locked: 2026-04 (D-0004). spaCy model choice → Phase 2.
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
   say `safeharbor` translate to `ridecloak`.
 
@@ -47,14 +49,49 @@ re-extract byte-for-byte by offset; decoy notes have zero spans. All criteria me
 pass. Findings: [findings/phase-0.md](findings/phase-0.md).
 **Decided:** first month = 2026-04 (D-0004); `labels.parquet` not committed (D-0005).
 
-### ☐ Phase 1 — Validation gate  (est. 2 days)
-Build: Pandera contract from the introspected schema; cross-field checks (dropoff ≥ pickup,
-`abs(trip_time − (dropoff − pickup)) ≤ 60s`, non-negative money, zone IDs in lookup, duplicate
-detection, per-column null-rate thresholds); 0–100 health score (completeness / validity /
-consistency / uniqueness); configurable gate threshold (default 90) that refuses export below.
-**Accept when:** `ridecloak validate --input dev` emits JSON + human-readable report; each check
-fires on a crafted bad fixture and passes on a clean one; a corrupted slice scores measurably
-lower and is refused.
+### ☑ Phase 1 — Validation gate  (done 2026-06-09)
+
+**Design (decisions D-0006). Two-tier gate, equal-weighted score.**
+
+Step 0 — calibration (do first): read-only **full-month** (~21M row) profile in DuckDB of
+null rates, value ranges, and negative/zero money shares, to set the contract's nullable flags
+and per-column null-rate thresholds (the 250K sample showed 0 nulls — too optimistic). Record
+the profile in `docs/findings/phase-1.md`.
+
+Modules under `pipeline/validate/` (pure core: DataFrame in → DataFrame/audit-dict out):
+- **`contract.py` — Tier 1 (hard).** Pandera `DataFrameSchema` for the 25 real HVFHV columns,
+  built from `data/raw/manifests/schema_2026-04.json` + the profile: dtypes; domains
+  (`PULocationID`/`DOLocationID` ∈ lookup 1–265, `trip_time ≥ 0`, datetimes parse, license/flag
+  value sets); nullability per the profile. Any violation ⇒ validation fails outright.
+- **`checks.py` — Tier 2 (soft), statistical/cross-field.** Each returns an audit record
+  (rule, rows_failed, fail_rate): `dropoff ≥ pickup`; `abs(trip_time − (dropoff−pickup)) ≤ 60s`;
+  money non-negative **per field** (negatives ding validity, not hard-fail — real data has 89);
+  zero-distance-with-positive-fare sanity; duplicate full-row detection; per-column null-rate vs
+  threshold.
+- **`health.py` — 0–100 score.** Four dimensions, **25 pts each (equal)**:
+  completeness (null-rate adherence), validity (per-row value rules), consistency (cross-field
+  rules), uniqueness (1 − duplicate-row share). Each dimension subscore = `100·(1 − fail_rate)`
+  (or threshold-adherence for completeness); composite = mean. Configurable `gate_threshold`
+  (default 90, already in settings) → `refused` boolean.
+
+Operates on the **25 real columns only**; synth PII columns are Phase 2's concern. Ledger entry
+deferred to Phase 5 — for now `validate` writes a JSON artifact + human-readable report to
+`outputs/reports/validation_<input>.json|.md` (idempotent, fixed name per input) and prints a
+Rich per-dimension summary with PASS/REFUSE.
+
+Testing: per-check unit tests on tiny hand-crafted fixtures (clean passes, each bad fixture
+fires its rule); a `corrupt_slice()` helper injects nulls/negatives/`dropoff<pickup`/
+out-of-range zones/duplicates, and a test asserts the score drops measurably below threshold and
+the gate refuses.
+
+**Accept when:** `ridecloak validate --input dev` emits JSON + human-readable report and PASSES
+clean 2026-04 (score ≥ 90); each check fires on a crafted bad fixture and passes on a clean one;
+the corrupted slice scores measurably lower and is refused; full-month profile recorded in
+findings.
+
+**Status: ☑ done (2026-06-09).** Clean dev + full month score 99.99 (PASS); corrupted fixture
+78.83 (REFUSED); month path validates 15.4M rows in 5.5s with no pandas load; 30 tests pass.
+Findings: [findings/phase-1.md](findings/phase-1.md).
 
 ### ☐ Phase 2 — Classification & PII detection  (est. 2–3 days)
 Build: `classification.yaml` tiering every column direct/quasi/sensitive/safe; Presidio over

@@ -1,0 +1,125 @@
+{
+  "filter": "HV0003",
+  "money": {
+    "airport_fee": {
+      "max": 7.0,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 14090465
+    },
+    "base_passenger_fare": {
+      "max": 1445.92,
+      "min": -222.34,
+      "neg": 5426,
+      "zero": 1790
+    },
+    "bcf": {
+      "max": 38.41,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 16227
+    },
+    "cbd_congestion_fee": {
+      "max": 1.5,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 10183293
+    },
+    "congestion_surcharge": {
+      "max": 2.75,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 9818378
+    },
+    "driver_pay": {
+      "max": 1104.01,
+      "min": -32.77,
+      "neg": 7,
+      "zero": 221
+    },
+    "sales_tax": {
+      "max": 140.14,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 477108
+    },
+    "tips": {
+      "max": 261.31,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 12465774
+    },
+    "tolls": {
+      "max": 86.58,
+      "min": 0.0,
+      "neg": 0,
+      "zero": 13616003
+    }
+  },
+  "month": "2026-04",
+  "null_counts": {
+    "DOLocationID": 0,
+    "PULocationID": 0,
+    "access_a_ride_flag": 0,
+    "airport_fee": 0,
+    "base_passenger_fare": 0,
+    "bcf": 0,
+    "cbd_congestion_fee": 0,
+    "congestion_surcharge": 0,
+    "dispatching_base_num": 0,
+    "driver_pay": 0,
+    "dropoff_datetime": 0,
+    "hvfhs_license_num": 0,
+    "on_scene_datetime": 0,
+    "originating_base_num": 0,
+    "pickup_datetime": 0,
+    "request_datetime": 0,
+    "sales_tax": 0,
+    "shared_match_flag": 0,
+    "shared_request_flag": 0,
+    "tips": 0,
+    "tolls": 0,
+    "trip_miles": 0,
+    "trip_time": 0,
+    "wav_match_flag": 0,
+    "wav_request_flag": 0
+  },
+  "null_rates": {
+    "DOLocationID": 0.0,
+    "PULocationID": 0.0,
+    "access_a_ride_flag": 0.0,
+    "airport_fee": 0.0,
+    "base_passenger_fare": 0.0,
+    "bcf": 0.0,
+    "cbd_congestion_fee": 0.0,
+    "congestion_surcharge": 0.0,
+    "dispatching_base_num": 0.0,
+    "driver_pay": 0.0,
+    "dropoff_datetime": 0.0,
+    "hvfhs_license_num": 0.0,
+    "on_scene_datetime": 0.0,
+    "originating_base_num": 0.0,
+    "pickup_datetime": 0.0,
+    "request_datetime": 0.0,
+    "sales_tax": 0.0,
+    "shared_match_flag": 0.0,
+    "shared_request_flag": 0.0,
+    "tips": 0.0,
+    "tolls": 0.0,
+    "trip_miles": 0.0,
+    "trip_time": 0.0,
+    "wav_match_flag": 0.0,
+    "wav_request_flag": 0.0
+  },
+  "temporal": {
+    "dropoff_lt_pickup": 0,
+    "trip_time_delta_gt_60s": 561,
+    "trip_time_max": 43799,
+    "trip_time_min": 0
+  },
+  "total_rows": 15378858,
+  "zones": {
+    "do_out_of_range": 0,
+    "pu_out_of_range": 0
+  }
+}

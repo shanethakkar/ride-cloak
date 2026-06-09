@@ -27,3 +27,11 @@ def write_parquet(df: pd.DataFrame, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(path, index=False)
     return path
+
+
+def write_text(path: Path, text: str) -> Path:
+    """Write a text artifact (e.g. a markdown report), creating parent dirs. Overwrites."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        fh.write(text)
+    return path

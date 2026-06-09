@@ -80,6 +80,27 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   [findings/phase-0.md](findings/phase-0.md) and `data/raw/manifests/schema_2026-04.json`).
 - **Closes:** the "first data month" row of D-0003. Additional months remain Shane's call (D-0003).
 
+## D-0006 — Phase 1 validation: two-tier gate, equal-weighted health score
+- **Date:** 2026-06-09
+- **Status:** Accepted
+- **Decision:** Validation is two-tier. **Tier 1 (hard)** is the Pandera contract — column
+  presence, dtypes, and value domains; any violation fails validation outright. **Tier 2
+  (soft)** is the 0-100 health score over four equally weighted dimensions (completeness,
+  validity, consistency, uniqueness, 25 each); the configurable gate (default 90) refuses
+  export below threshold. Legitimate real-data anomalies (e.g. 89 negative `base_passenger_fare`
+  rows = 0.036%, rare `trip_time` outliers) are **validity/consistency dings, not hard
+  failures**, so clean published data passes its own gate while injected corruption drops it.
+- **Why:** Profiling 2026-04 showed the published data is the clean pipeline *output* (zero
+  nulls, zero out-of-range zones, zero dup rows) but carries genuine refund/adjustment negatives.
+  A strict hard-fail would wrongly reject real data; an all-soft model would lose the structural
+  guarantee. Two-tier keeps both. Equal weights are the most defensible/explainable choice.
+- **Calibration:** the contract's nullable flags and per-column null-rate thresholds are set
+  from a **full-month** (~21M row) profile, not the 250K sample (which showed 0 nulls and is
+  optimistic for known-optional columns). Recorded in the Phase 1 findings note.
+- **Alternatives:** strict hard-fail (rejected — fails real data, needs a quarantine step);
+  all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
+  equal is the baseline; revisit if a dimension proves uninformative).
+
 ## D-0005 — labels.parquet stays under gitignored data/synth/ (not committed)
 - **Date:** 2026-06-09
 - **Status:** Accepted

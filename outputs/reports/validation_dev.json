@@ -1,0 +1,80 @@
+{
+  "counts": {
+    "completeness": {
+      "null_cells": 0,
+      "null_per_col": {
+        "DOLocationID": 0,
+        "PULocationID": 0,
+        "access_a_ride_flag": 0,
+        "airport_fee": 0,
+        "base_passenger_fare": 0,
+        "bcf": 0,
+        "cbd_congestion_fee": 0,
+        "congestion_surcharge": 0,
+        "dispatching_base_num": 0,
+        "driver_pay": 0,
+        "dropoff_datetime": 0,
+        "hvfhs_license_num": 0,
+        "on_scene_datetime": 0,
+        "originating_base_num": 0,
+        "pickup_datetime": 0,
+        "request_datetime": 0,
+        "sales_tax": 0,
+        "shared_match_flag": 0,
+        "shared_request_flag": 0,
+        "tips": 0,
+        "tolls": 0,
+        "trip_miles": 0,
+        "trip_time": 0,
+        "wav_match_flag": 0,
+        "wav_request_flag": 0
+      },
+      "total_cells": 6250000
+    },
+    "consistency": {
+      "fail_rows": 5,
+      "rules": {
+        "dropoff_before_pickup": 0,
+        "trip_time_mismatch": 5
+      }
+    },
+    "n": 250000,
+    "uniqueness": {
+      "duplicate_rows": 0
+    },
+    "validity": {
+      "fail_rows": 89,
+      "rules": {
+        "access_a_ride_flag_not_YN": 0,
+        "airport_fee_negative": 0,
+        "base_passenger_fare_negative": 89,
+        "bcf_negative": 0,
+        "cbd_congestion_fee_negative": 0,
+        "congestion_surcharge_negative": 0,
+        "driver_pay_negative": 0,
+        "sales_tax_negative": 0,
+        "shared_match_flag_not_YN": 0,
+        "shared_request_flag_not_YN": 0,
+        "tips_negative": 0,
+        "tolls_negative": 0,
+        "trip_miles_negative": 0,
+        "wav_match_flag_not_YN": 0,
+        "wav_request_flag_not_YN": 0
+      }
+    }
+  },
+  "dimensions": {
+    "completeness": 100.0,
+    "consistency": 99.998,
+    "uniqueness": 100.0,
+    "validity": 99.9644
+  },
+  "gate_threshold": 90,
+  "health_score": 99.9906,
+  "reason": null,
+  "refused": false,
+  "rows": 250000,
+  "source": "dev",
+  "structural_failures": [],
+  "tier1_passed": true
+}
