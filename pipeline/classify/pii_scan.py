@@ -68,7 +68,8 @@ def scan_text(
     threshold: float = DEFAULT_THRESHOLD,
 ) -> list[dict]:
     """Return deconflicted detection records ``{entity_type, start, end, score}``."""
-    if not text:
+    # Non-strings (None, pandas NA from a nullable column) and empty text -> no detections.
+    if not isinstance(text, str) or not text:
         return []
     results = analyzer.analyze(
         text=text,

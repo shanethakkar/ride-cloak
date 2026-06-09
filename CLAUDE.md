@@ -115,13 +115,12 @@ Python 3.12 via **uv** (`uv init`, `uv add`, commit `uv.lock`). Presidio needs a
 accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first.
 
 ## Current State
-- **Phases 0–3 complete (2026-06-09).** P0: scaffold, ingest, synthetic PII layer + labels,
-  250K dev slice. P1: two-tier validation gate. P2: classification + Presidio detection
-  (precision 0.997, recall 0.998 vs ground truth). P3: transform engine (generalization,
-  salted-SHA-256 pseudonymization, suppression+redaction, k-anonymity) + `ridecloak risk`.
-  Headline: full-month uniqueness 90.1%→0.06% (zone→borough); zone-level k-anon infeasible.
-  64 tests pass, ruff green.
-- **Next step:** Phase 4 — export profiles (TLC / MDS / LE YAML policies, pydantic schema,
-  policy→transform-plan compiler, runner with gate + approval enforcement). Sets per-profile k
-  and time buckets. See [docs/plan.md](docs/plan.md).
+- **Phases 0–4 complete (2026-06-09).** P0: scaffold/ingest/synth/dev slice. P1: two-tier
+  validation gate. P2: classification + Presidio detection (precision 0.997, recall 0.998).
+  P3: transform engine + `ridecloak risk` (full-month uniqueness 90.1%→0.06% zone→borough).
+  P4: export profiles — declarative YAML policies + compiler + runner with two fail-closed gates;
+  TLC/MDS/LE + toy 4th export from YAML with zero code; MDS month retains 99.95% in ~2s.
+  77 tests pass, ruff green.
+- **Next step:** Phase 5 — attestation ledger (hash-chained JSONL, `verify-ledger`, methodology
+  report regenerated from a ledger entry). The Phase 4 runner audit is already the ledger payload.
 - **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.

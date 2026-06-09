@@ -1,0 +1,45 @@
+{
+  "approval_id": null,
+  "cells_in": 24766,
+  "cells_out": 20549,
+  "cells_suppressed": 4217,
+  "columns_shared": [
+    "PUBorough",
+    "DOBorough",
+    "pickup_bucket",
+    "trip_count"
+  ],
+  "columns_withheld": [],
+  "gate": {
+    "health_score": null,
+    "refused": false
+  },
+  "generated_utc": "2026-06-09T22:32:07.416710+00:00",
+  "input_hash": null,
+  "k_achieved": 5,
+  "output_hash": "b645a07803117871f4d5788ca87eb63e9f1a6b47b5302f1b8371648f64fc3c27",
+  "output_kind": "aggregate",
+  "output_path": "outputs\\exports\\mds_aggregate_month_2026-04.csv",
+  "policy_hash": "6844317ab135b45f9d413188ac4ce1e4059f172b43fa138d43956dea9b99c4c7",
+  "policy_name": "mds_aggregate",
+  "policy_version": 1,
+  "reason": null,
+  "refused": false,
+  "requires_approval": false,
+  "rows_in": 15378858,
+  "rows_out": 15370445,
+  "salt_fingerprint": "n/a",
+  "source": "month:2026-04",
+  "transforms": [
+    {
+      "dimensions": [
+        "PUBorough",
+        "DOBorough",
+        "pickup_bucket"
+      ],
+      "k": 5,
+      "minutes": 60,
+      "op": "aggregate"
+    }
+  ]
+}

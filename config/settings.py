@@ -86,6 +86,22 @@ class Settings(BaseSettings):
         return self.outputs_dir / "reports"
 
     @property
+    def exports_dir(self) -> Path:
+        return self.outputs_dir / "exports"
+
+    @property
+    def approvals_dir(self) -> Path:
+        return self.outputs_dir / "approvals"
+
+    @property
+    def salts_dir(self) -> Path:
+        return self.secrets_dir / "salts"
+
+    @property
+    def policies_dir(self) -> Path:
+        return PROJECT_ROOT / "policies"
+
+    @property
     def secrets_dir(self) -> Path:
         return PROJECT_ROOT / "secrets"
 

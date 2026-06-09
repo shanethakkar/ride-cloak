@@ -1,0 +1,12 @@
+{
+  "generated_utc": "2026-06-09T22:31:55.088832+00:00",
+  "output_kind": "row_level",
+  "output_path": null,
+  "policy_hash": "7df70848079f971fdad8b860c3ae659b5b0c13e396af2ab73d0a042b131dc29f",
+  "policy_name": "law_enforcement_extract",
+  "policy_version": 1,
+  "reason": "approval required but no approval record found",
+  "refused": true,
+  "source": "dev",
+  "transforms": []
+}

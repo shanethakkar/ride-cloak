@@ -1,0 +1,26 @@
+# Law-enforcement trip extract. Minimal trip-scoped fields released only under a
+# logged human approval (requires_approval). Pseudonymized trip key, zone-level
+# location, pickup/dropoff rounded to 15 minutes, and the fare. No free text, no
+# driver/rider identity columns.
+name: law_enforcement_extract
+version: 1
+description: >-
+  Minimal law-enforcement extract under a logged approval. Pseudonymized trip
+  key, zone-level pickup/dropoff, 15-minute-rounded times, and base fare only.
+output_kind: row_level
+requires_approval: true
+row_level:
+  pseudonymize_columns:
+    - trip_id
+  time_bucket_minutes: 15
+  rollup_zone: false
+  redact_note: false
+  drop_columns: []
+  select_columns:
+    - trip_id
+    - PULocationID
+    - DOLocationID
+    - pickup_datetime
+    - dropoff_datetime
+    - base_passenger_fare
+  kanon: null

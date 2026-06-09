@@ -1,0 +1,18 @@
+# MDS-style mobility aggregate (LADOT Mobility Data Specification style).
+# Trip counts per borough-pair and 60-minute bucket, small-cell suppressed at
+# k=5. Borough (not zone) geography because zone-level aggregates are too sparse
+# to release: at zone x 60-min, k=5 suppresses ~87% of cells (decisions.md D-0009).
+name: mds_aggregate
+version: 1
+description: >-
+  Aggregate trip counts by origin borough, destination borough, and 60-minute
+  pickup bucket, with small-cell suppression at k=5.
+output_kind: aggregate
+requires_approval: false
+aggregate:
+  dimensions:
+    - PUBorough
+    - DOBorough
+    - pickup_bucket
+  time_bucket_minutes: 60
+  k: 5

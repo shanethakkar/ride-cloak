@@ -13,18 +13,17 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 3** (2026-06-09) — transform engine: generalization, salted-SHA-256
-  pseudonymization, suppression + span redaction, k-anonymity. `ridecloak risk` reports the
-  uniqueness ladder + k-suppression cost (dev pandas, month via DuckDB in 4.3s, no pandas).
-  **Headline:** full-month uniqueness 90.1% (zone×min) → 0.06% (borough×15min); zone-level k=5
-  suppresses 85%, borough×15min only 0.26% — generalization is the lever. `pytest` (64 passed),
-  ruff green. See [findings/phase-3.md](findings/phase-3.md).
-- **Phases completed:** 0, 1, 2, 3.
-- **Next step:** Begin **Phase 4** — export profiles: three YAML policies (TLC row-level
-  pseudonymized; MDS borough/zone aggregate k-suppressed; LE minimal + approval), pydantic
-  policy schema, policy→ordered-transform-plan compiler, runner that refuses on failed
-  certification or missing LE approval. **Sets per-profile k and time buckets** (TLC 15-min /
-  MDS 60-min defaults).
+- **Last completed:** **Phase 4** (2026-06-09) — export profiles: declarative YAML policies +
+  pydantic schema + compiler + runner with two fail-closed gates (validation, approval). Three
+  profiles run end to end: TLC (250K rows, 10 IDs pseudonymized, 15-min, notes redacted), MDS
+  (borough×60-min k=5; full month retains 99.95% of rows in ~2s), LE (fails closed without
+  approval). Toy 4th policy exports with zero code. `pytest` (77 passed), ruff green.
+  See [findings/phase-4.md](findings/phase-4.md).
+- **Phases completed:** 0, 1, 2, 3, 4.
+- **Next step:** Begin **Phase 5** — attestation ledger: append-only hash-chained JSONL with the
+  SPEC §7 entry schema; every pipeline command appends an entry; `ridecloak verify-ledger` walks
+  the chain; methodology report regenerates byte-identically from a ledger entry. The Phase 4
+  runner audit dict is already shaped as the ledger payload.
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
@@ -201,16 +200,55 @@ loading raw parquet into pandas.
 **Decided (D-0008):** k=5 default; raw-zone default QI with full ladder; redact support_note
 spans; record-drop suppression; salted-SHA-256 + per-export salt fingerprint.
 
-### ☐ Phase 4 — Export profiles  (est. 2 days)
-Build: three YAML policies — TLC trip submission (row-level, pseudonymized, 15-min rounding,
-full fare fields, HVFHV-matched schema); MDS aggregate (zone × time-bucket counts, k-suppressed);
-law-enforcement extract (trip-scoped, minimal fields, requires approval record); pydantic policy
-schema; compiler policy → ordered transform plan; runner that refuses if the certification gate
-failed or (LE) approval is absent.
-**Accept when:** all three exports produce files + methodology reports from one command each
-(`ridecloak export --profile tlc --input dev`); adding a toy fourth policy file needs zero code
-changes (test proves it); LE profile without approval fails closed with a logged refusal.
-**Decides:** TLC 15-min / MDS 60-min buckets.
+### ☑ Phase 4 — Export profiles  (done 2026-06-09)
+
+**Result: 3 profiles + toy 4th export from YAML (zero code); LE fails closed; MDS month retains
+99.95% in ~2s. 77 tests pass.** Findings: [findings/phase-4.md](findings/phase-4.md).
+Design below (decisions D-0009). Declarative YAML policies compose Phase 3.
+
+`policies/` (3 YAML + schema):
+- **`schema.py`** — pydantic `Policy`: `name`, `version`, `description`, `output_kind`
+  (`row_level` | `aggregate`), `requires_approval`, and a block per kind:
+  - row_level: `pseudonymize_columns`, `time_bucket_minutes`, `rollup_zone` (bool),
+    `redact_note` (bool), `drop_columns`, `select_columns` (whitelist | null), `kanon`
+    (`{qi, k}` | null).
+  - aggregate: `dimensions` (e.g. `[PUBorough, DOBorough, pickup_bucket]`),
+    `time_bucket_minutes`, `k`. Validates on load; a malformed policy fails fast.
+- **`tlc_trip_submission.yaml`** — row-level; pseudonymize the 10 direct-id columns; 15-min
+  pickup rounding; `redact_note`; keep zone; full fares; no kanon.
+- **`mds_aggregate.yaml`** — aggregate; borough×borough×60-min counts; k=5.
+- **`law_enforcement_extract.yaml`** — row-level; minimal `select_columns`; pseudonymized trip
+  key + zone/time; `requires_approval: true`.
+
+`pipeline/export/`:
+- **`profiles.py`** — compiler: `Policy` → ordered transform plan. Row-level order: redact_note →
+  pseudonymize → generalize time → rollup zone → drop → kanon suppress → select. Aggregate:
+  build dims (time bucket + borough rollup) → group-count → small-cell-suppress (k).
+- **`runner.py`** — execute the plan on the input; **fail closed** if the Phase 1 validation gate
+  is REFUSED or (LE) the approval is absent; generate a per-export salt (store via
+  `io/salts.py`, fingerprint into the audit); write the export to `outputs/exports/` (parquet
+  row-level, CSV aggregate); emit a **methodology report** + an audit dict carrying the Phase 5
+  ledger fields (rows_in/out, cells_suppressed, k_achieved, salt_fingerprint, transforms,
+  policy_name/version/hash, input_hash, output_hash).
+- **`report.py`** — render the methodology report (what was shared, withheld, why, under which
+  policy version) from the audit; the same function regenerates from a ledger entry in Phase 5.
+
+`pipeline/io/approvals.py` + **`ridecloak approve --request-id <id>`** (human-only, SPEC §13)
+writes an approval record under `outputs/approvals/`. **`ridecloak export --profile <tlc|mds|le>
+--input <dev|month> [--approval <id>]`** runs the profile. Row-level profiles are dev-scoped (the
+synth identity layer only exists there); MDS aggregate also supports `--input month` via SQL.
+
+Tests (`test_policies.py`, `test_export`): policy schema loads/validates all three; compiler
+produces the expected ordered plan; each profile exports a file + report on dev; **a toy 4th
+policy YAML exports with zero code changes**; **LE without approval fails closed** with a logged
+refusal; LE **with** a fixture-written approval produces a file (happy path); pseudonymized
+columns are unrecoverable + salt fingerprint recorded; MDS cells below k are suppressed.
+
+**Accept when:** all three exports produce files + methodology reports from one command each;
+adding a toy fourth policy needs zero code changes (test); LE without approval fails closed with
+a logged refusal. (Claude does not run `approve`; committed LE artifact is the refusal.)
+**Decided (D-0009):** TLC 15-min row-level no-k; MDS borough×60-min k=5; LE minimal+approval;
+declarative policy language.
 
 ### ☐ Phase 5 — Attestation ledger  (est. 2 days)
 Build: append-only JSONL ledger with the SPEC §7 entry schema; `entry_hash =

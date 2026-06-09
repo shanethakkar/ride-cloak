@@ -1,0 +1,30 @@
+# TLC High-Volume FHV row-level submission (Local Law 149 style).
+# Mirrors the real mandated submission: every trip, direct identifiers
+# pseudonymized, pickup time generalized, free-text PII redacted, zone-level
+# location retained, full fare fields. No k-suppression (row-level mandate).
+name: tlc_trip_submission
+version: 1
+description: >-
+  Row-level TLC submission. Direct identifiers pseudonymized with a per-export
+  salt, pickup/dropoff rounded to 15 minutes, support-note PII redacted,
+  zone-level location and full fare fields retained.
+output_kind: row_level
+requires_approval: false
+row_level:
+  pseudonymize_columns:
+    - trip_id
+    - rider_id
+    - rider_phone
+    - rider_email
+    - device_id
+    - payment_token
+    - driver_license_num
+    - driver_name
+    - vehicle_plate
+    - vehicle_vin
+  time_bucket_minutes: 15
+  rollup_zone: false
+  redact_note: true
+  drop_columns: []
+  select_columns: null
+  kanon: null

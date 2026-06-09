@@ -60,8 +60,8 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   | Parameter | Working default | Decided in |
   |---|---|---|
   | k-anonymity threshold | k = 5 | **Resolved D-0008** (default; final per-profile in Phase 4) |
-  | TLC profile time bucket | 15 min | Phase 4 |
-  | MDS profile time bucket | 60 min | Phase 4 |
+  | TLC profile time bucket | 15 min | **Resolved D-0009** |
+  | MDS profile time bucket | 60 min | **Resolved D-0009** (borough geography) |
   | First data month | most recent available (TLC ~2-month publish delay → ~2026-03/04, verify at Phase 0) | Phase 0 |
   | Additional months beyond the first | none yet | post-Phase 0 |
 - **How to close:** When a phase consumes one of these, confirm the value with Shane, then add
@@ -100,6 +100,32 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
 - **Alternatives:** strict hard-fail (rejected — fails real data, needs a quarantine step);
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
+
+## D-0009 — Phase 4 export profiles
+- **Date:** 2026-06-09
+- **Status:** Accepted (closes the D-0003 time-bucket row)
+- **Decisions:**
+  1. **Per-profile parameters (escalation #2 confirmed).**
+     - **TLC trip submission** — row-level; direct identifiers pseudonymized; `pickup_datetime`
+       rounded to **15 min**; support_note PII spans redacted; **zone-level location kept**; full
+       fare fields; **no k-suppression** (mirrors the real mandated row-level submission).
+     - **MDS aggregate** — count-per-cell over **borough × borough × 60 min**, **k=5** small-cell
+       suppression. (Recommendation: zone-level is the SPEC literal but suppresses 87% of cells,
+       leaving a near-useless aggregate; borough retains ~all rows while k=5 still fires at 17%
+       of cells. Zone is one YAML change away; the 87% finding is documented in methodology.)
+     - **LE extract** — minimal trip-scoped fields (pseudonymized trip key + zone/time), requires
+       an approval record to run.
+  2. **Row-level exports (TLC, LE) operate on the dev slice**, because the reconstructed
+     synthetic identity layer (the columns being pseudonymized/redacted) only exists there. The
+     **MDS aggregate** needs no PII and can run on the dev slice or the **full month via SQL**.
+  3. **LE approval & SPEC §13.** Build `ridecloak approve` (writes an approval record) and the
+     runner's fail-closed gate, but **Claude never invokes `approve`** (human-only act). The
+     committed showcase artifact is the **fail-closed refusal**; the with-approval happy path is
+     exercised in tests (a fixture writes the approval). Shane runs `approve` for a real LE export.
+  4. **Policy language is declarative.** The pydantic policy schema + compiler express all three
+     profiles from YAML; a toy fourth policy produces an export with **zero code changes** (tested).
+- **Why:** keeps the privacy parameters as policy not code; grounds MDS geography in the Phase 3
+  sparsity finding; honors the human-only approval boundary; satisfies "new regulator = new YAML".
 
 ## D-0008 — Phase 3 transform engine & the zone-level k-anonymity finding
 - **Date:** 2026-06-09

@@ -368,5 +368,191 @@ def _print_risk_summary(result: dict) -> None:
     console.print(supp)
 
 
+_PROFILE_FILES = {
+    "tlc": "tlc_trip_submission",
+    "mds": "mds_aggregate",
+    "le": "law_enforcement_extract",
+}
+
+
+@main.command()
+@click.option("--profile", required=True, type=click.Choice(["tlc", "mds", "le"]))
+@click.option(
+    "--input",
+    "input_sel",
+    required=True,
+    type=click.Choice(["dev", "month"]),
+    help="'dev' for row-level/aggregate; 'month' only for the MDS aggregate (scale path).",
+)
+@click.option("--month", default=None, help="Required when --input month (YYYY-MM).")
+@click.option("--approval", default=None, help="Approval record id (required for the LE profile).")
+def export(profile: str, input_sel: str, month: str | None, approval: str | None) -> None:
+    """Run a sharing policy and emit a regulator export + methodology report."""
+    import hashlib
+
+    from pipeline.export import runner
+    from pipeline.io import readers
+    from policies.schema import OutputKind, load_policy
+
+    settings = get_settings()
+    policy, policy_hash = load_policy(settings.policies_dir / f"{_PROFILE_FILES[profile]}.yaml")
+
+    if input_sel == "month":
+        if policy.output_kind != OutputKind.AGGREGATE:
+            raise click.UsageError(
+                "--input month is only supported for the MDS aggregate; row-level profiles "
+                "(tlc, le) operate on the dev slice where the synthetic identity layer exists."
+            )
+        if not month:
+            raise click.UsageError("--input month requires --month YYYY-MM.")
+        result = _export_mds_month(month, policy, policy_hash, settings)
+    else:
+        df = readers.read_parquet(settings.dev_slice_path)
+        zl = readers.read_csv(settings.zone_lookup_path)
+        lookup = dict(zip(zl["LocationID"], zl["Borough"], strict=True))
+        input_hash = hashlib.sha256(settings.dev_slice_path.read_bytes()).hexdigest()
+        detector = None
+        if policy.row_level and policy.row_level.redact_note:
+            from pipeline.classify import pii_scan
+
+            analyzer = pii_scan.build_analyzer()
+            console.print("[bold]Scanning notes for redaction[/bold] ...")
+            detector = lambda texts: pii_scan.scan_texts(analyzer, texts)  # noqa: E731
+        result = runner.run_export(
+            df,
+            policy,
+            policy_hash,
+            settings,
+            lookup,
+            source="dev",
+            input_hash=input_hash,
+            note_detector=detector,
+            approval_id=approval,
+        )
+
+    _print_export_summary(result)
+    if result["refused"]:
+        raise SystemExit(1)
+
+
+def _export_mds_month(month: str, policy, policy_hash: str, settings) -> dict:
+    """Scale path: compute the MDS aggregate over a full month in DuckDB (no pandas load)."""
+    from datetime import UTC, datetime
+
+    from pipeline.export import report
+    from pipeline.io import duck, writers
+
+    a = policy.aggregate
+    raw = settings.raw_parquet_path(month).as_posix()
+    lk = settings.zone_lookup_path.as_posix()
+    con = duck.connect()
+    try:
+        con.execute(f"CREATE VIEW z AS SELECT LocationID, Borough FROM read_csv('{lk}')")
+        bucket = f"time_bucket(INTERVAL '{a.time_bucket_minutes} minutes', d.pickup_datetime)"
+        con.execute(
+            "CREATE VIEW j AS SELECT zp.Borough AS PUBorough, zd.Borough AS DOBorough, "
+            f"{bucket} AS pickup_bucket "
+            f"FROM (SELECT * FROM read_parquet('{raw}') "
+            f"WHERE hvfhs_license_num = '{settings.uber_license_num}') d "
+            "JOIN z zp ON d.PULocationID = zp.LocationID "
+            "JOIN z zd ON d.DOLocationID = zd.LocationID"
+        )
+        dims = ", ".join(a.dimensions)
+        agg = con.execute(
+            f"SELECT {dims}, count(*) AS trip_count FROM j GROUP BY {dims} "
+            f"HAVING count(*) >= {a.k} ORDER BY trip_count DESC"
+        ).df()
+        cells_in = int(
+            con.execute(f"SELECT count(*) FROM (SELECT {dims} FROM j GROUP BY {dims})").fetchone()[
+                0
+            ]
+        )
+        total = int(con.execute("SELECT count(*) FROM j").fetchone()[0])
+    finally:
+        con.close()
+
+    source = f"month:{month}"
+    settings.exports_dir.mkdir(parents=True, exist_ok=True)
+    output_path = settings.exports_dir / f"{policy.name}_{source.replace(':', '_')}.csv"
+    agg.to_csv(output_path, index=False)
+    import hashlib
+
+    result = {
+        "policy_name": policy.name,
+        "policy_version": policy.version,
+        "policy_hash": policy_hash,
+        "output_kind": policy.output_kind.value,
+        "source": source,
+        "input_hash": None,
+        "requires_approval": policy.requires_approval,
+        "approval_id": None,
+        "gate": {"health_score": None, "refused": False},
+        "salt_fingerprint": "n/a",
+        "rows_in": total,
+        "rows_out": int(agg["trip_count"].sum()),
+        "cells_in": cells_in,
+        "cells_out": len(agg),
+        "cells_suppressed": cells_in - len(agg),
+        "k_achieved": int(agg["trip_count"].min()) if len(agg) else None,
+        "columns_shared": list(agg.columns),
+        "columns_withheld": [],
+        "transforms": [
+            {
+                "op": "aggregate",
+                "dimensions": a.dimensions,
+                "minutes": a.time_bucket_minutes,
+                "k": a.k,
+            }
+        ],
+        "generated_utc": datetime.now(UTC).isoformat(),
+        "output_path": str(output_path.relative_to(settings.project_root)),
+        "output_hash": hashlib.sha256(output_path.read_bytes()).hexdigest(),
+        "refused": False,
+        "reason": None,
+    }
+    writers.write_text(
+        settings.reports_dir / f"export_{policy.name}_{source.replace(':', '_')}.md",
+        report.render_markdown(result),
+    )
+    writers.write_json(
+        settings.reports_dir / f"export_{policy.name}_{source.replace(':', '_')}.json", result
+    )
+    return result
+
+
+def _print_export_summary(result: dict) -> None:
+    table = Table(title=f"Export — {result['policy_name']} ({result['source']})")
+    table.add_column("field")
+    table.add_column("value", justify="right")
+    if result["refused"]:
+        table.add_row("status", "[red]REFUSED[/red]")
+        table.add_row("reason", result["reason"])
+    else:
+        table.add_row("rows in", f"{result['rows_in']:,}")
+        table.add_row("rows out", f"{result['rows_out']:,}")
+        table.add_row("cells suppressed", f"{result['cells_suppressed']:,}")
+        if result.get("k_achieved") is not None:
+            table.add_row("k achieved", str(result["k_achieved"]))
+        table.add_row("salt fingerprint", str(result["salt_fingerprint"])[:16])
+        table.add_row("output", result["output_path"])
+    console.print(table)
+
+
+@main.command()
+@click.option("--request-id", required=True, help="Identifier of the request being approved.")
+@click.option("--note", default="", help="Optional approval note.")
+def approve(request_id: str, note: str) -> None:
+    """Record a human approval for a gated export (human-only act, SPEC section 13)."""
+    import getpass
+
+    from pipeline.io import approvals
+
+    settings = get_settings()
+    path = approvals.write_approval(
+        request_id, settings.approvals_dir, operator=getpass.getuser(), note=note
+    )
+    console.print(f"[green]Approval recorded[/green] for '{request_id}' -> {path}")
+
+
 if __name__ == "__main__":
     main()

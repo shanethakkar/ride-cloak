@@ -1,0 +1,82 @@
+{
+  "approval_id": null,
+  "cells_in": 14988,
+  "cells_out": 9000,
+  "cells_suppressed": 5988,
+  "columns_shared": [
+    "PUBorough",
+    "DOBorough",
+    "pickup_bucket",
+    "trip_count"
+  ],
+  "columns_withheld": [
+    "DOLocationID",
+    "PULocationID",
+    "access_a_ride_flag",
+    "airport_fee",
+    "base_passenger_fare",
+    "bcf",
+    "cbd_congestion_fee",
+    "congestion_surcharge",
+    "device_id",
+    "dispatching_base_num",
+    "driver_license_num",
+    "driver_name",
+    "driver_pay",
+    "dropoff_datetime",
+    "hvfhs_license_num",
+    "on_scene_datetime",
+    "originating_base_num",
+    "payment_token",
+    "pickup_datetime",
+    "request_datetime",
+    "rider_email",
+    "rider_id",
+    "rider_phone",
+    "sales_tax",
+    "shared_match_flag",
+    "shared_request_flag",
+    "support_note",
+    "tips",
+    "tolls",
+    "trip_id",
+    "trip_miles",
+    "trip_time",
+    "vehicle_plate",
+    "vehicle_vin",
+    "wav_match_flag",
+    "wav_request_flag"
+  ],
+  "gate": {
+    "health_score": 99.9906,
+    "refused": false
+  },
+  "generated_utc": "2026-06-09T22:31:53.517368+00:00",
+  "input_hash": "f0aba3cd66373ccb98c408bbd77f4a5335ff87019b54a249c0111b2119d25411",
+  "k_achieved": 5,
+  "output_hash": "431c602c3a31bc7c8d90099b18c2536becf51ab0c2534207379f3ce27451f9fc",
+  "output_kind": "aggregate",
+  "output_path": "outputs\\exports\\mds_aggregate_dev.csv",
+  "policy_hash": "6844317ab135b45f9d413188ac4ce1e4059f172b43fa138d43956dea9b99c4c7",
+  "policy_name": "mds_aggregate",
+  "policy_version": 1,
+  "reason": null,
+  "refused": false,
+  "requires_approval": false,
+  "rows_in": 250000,
+  "rows_out": 238153,
+  "salt_fingerprint": "n/a",
+  "source": "dev",
+  "transforms": [
+    {
+      "dimensions": [
+        "PUBorough",
+        "DOBorough",
+        "pickup_bucket"
+      ],
+      "k": 5,
+      "minutes": 60,
+      "op": "aggregate"
+    }
+  ]
+}
