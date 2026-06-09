@@ -1,0 +1,8 @@
+{
+  "artifact": "taxi_zone_lookup_csv",
+  "bytes": 12331,
+  "download_date_utc": "2026-06-09T20:41:09.565043+00:00",
+  "path": "data\\raw\\taxi_zone_lookup.csv",
+  "sha256": "1a99e105092230f8620f301edcca7f80d3080642ff404d28ed957d3fa222c8ed",
+  "source_url": "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+}

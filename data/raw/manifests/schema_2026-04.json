@@ -1,0 +1,105 @@
+{
+  "columns": [
+    {
+      "name": "hvfhs_license_num",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "dispatching_base_num",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "originating_base_num",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "request_datetime",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "on_scene_datetime",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "pickup_datetime",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "dropoff_datetime",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "PULocationID",
+      "type": "INTEGER"
+    },
+    {
+      "name": "DOLocationID",
+      "type": "INTEGER"
+    },
+    {
+      "name": "trip_miles",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "trip_time",
+      "type": "BIGINT"
+    },
+    {
+      "name": "base_passenger_fare",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "tolls",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "bcf",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "sales_tax",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "congestion_surcharge",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "airport_fee",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "tips",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "driver_pay",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "shared_request_flag",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "shared_match_flag",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "access_a_ride_flag",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "wav_request_flag",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "wav_match_flag",
+      "type": "VARCHAR"
+    },
+    {
+      "name": "cbd_congestion_fee",
+      "type": "DOUBLE"
+    }
+  ],
+  "month": "2026-04"
+}

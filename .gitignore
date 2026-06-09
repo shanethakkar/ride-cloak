@@ -1,0 +1,27 @@
+# Large generated / sensitive data — never committed (see CLAUDE.md git discipline)
+data/raw/*
+data/dev/*
+secrets/
+.env
+outputs/exports/*
+
+# Keep committed manifests / placeholders inside otherwise-ignored dirs
+!data/raw/*.json
+!data/raw/manifests/
+!data/dev/.gitkeep
+!outputs/exports/.gitkeep
+
+# Synthetic data: the generator + seed are committed (reproducible); the
+# generated tables are not. labels.parquet commit decision: see decisions.md.
+data/synth/*
+!data/synth/.gitkeep
+
+# Python / uv / tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
