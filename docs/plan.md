@@ -13,17 +13,17 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 4** (2026-06-09) — export profiles: declarative YAML policies +
-  pydantic schema + compiler + runner with two fail-closed gates (validation, approval). Three
-  profiles run end to end: TLC (250K rows, 10 IDs pseudonymized, 15-min, notes redacted), MDS
-  (borough×60-min k=5; full month retains 99.95% of rows in ~2s), LE (fails closed without
-  approval). Toy 4th policy exports with zero code. `pytest` (77 passed), ruff green.
-  See [findings/phase-4.md](findings/phase-4.md).
-- **Phases completed:** 0, 1, 2, 3, 4.
-- **Next step:** Begin **Phase 5** — attestation ledger: append-only hash-chained JSONL with the
-  SPEC §7 entry schema; every pipeline command appends an entry; `ridecloak verify-ledger` walks
-  the chain; methodology report regenerates byte-identically from a ledger entry. The Phase 4
-  runner audit dict is already shaped as the ledger payload.
+- **Last completed:** **Phase 5** (2026-06-09) — attestation ledger: append-only hash-chained
+  JSONL; every command appends an entry; `ridecloak verify-ledger` walks the chain. A full run
+  yields an 8-entry chain (fetch→synth→validate→classify→risk→3 exports), verified intact;
+  tampering is caught at the exact break seq; the methodology report regenerates byte-identical
+  from a ledger entry. `pytest` (82 passed), ruff green. See [findings/phase-5.md](findings/phase-5.md).
+- **Phases completed:** 0, 1, 2, 3, 4, 5.
+- **Next step:** Begin **Phase 6** — AI triage agent with guardrails (needs `ANTHROPIC_API_KEY`):
+  Claude parses a free-text request into a structured form; a deterministic guardrail layer maps
+  fields against `classification.yaml` + policies and fails closed on out-of-policy/injection;
+  draft-only (no code path to `runner.py`, grep-enforced); every prompt/response hashed into the
+  ledger. **Optional 6b Streamlit console — cut first if behind.**
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
@@ -250,14 +250,43 @@ a logged refusal. (Claude does not run `approve`; committed LE artifact is the r
 **Decided (D-0009):** TLC 15-min row-level no-k; MDS borough×60-min k=5; LE minimal+approval;
 declarative policy language.
 
-### ☐ Phase 5 — Attestation ledger  (est. 2 days)
-Build: append-only JSONL ledger with the SPEC §7 entry schema; `entry_hash =
-sha256(canonical_json(entry − entry_hash))` chained via `prev_entry_hash`;
-`ridecloak verify-ledger` walks the chain; methodology report generator pulls from the ledger
-entry (what shared, withheld, why, which policy version).
+### ☑ Phase 5 — Attestation ledger  (done 2026-06-09)
+
+**Result: 8-entry chain verified intact; tamper caught at exact seq; report regenerates
+byte-identical. 82 tests pass.** Findings: [findings/phase-5.md](findings/phase-5.md).
+Design below (decisions D-0010). Every command chains; entry embeds the audit.
+
+`pipeline/attest/`:
+- **`ledger.py`** — append-only JSONL at `outputs/ledger/ledger.jsonl`.
+  - Entry = flat dict: envelope (`seq`, `timestamp_utc`, `run_id`, `command`, `operator`,
+    `prev_entry_hash`, `entry_hash`) + provenance (`input_hash`, `output_hash`) + the full
+    command record (for export: the Phase 4 audit superset — policy_name/version/hash,
+    output_kind, transforms, rows_in/out, cells_suppressed, k_achieved, salt_fingerprint,
+    columns_shared/withheld, gate, generated_utc, refused/reason; for other commands: a
+    `metrics` summary, policy_* null).
+  - `append(ledger_path, record, command, operator)` reads the prior `entry_hash` (genesis
+    `"0"*64`), assigns `seq`, computes `entry_hash = sha256(canonical_json(entry − entry_hash))`,
+    appends one JSONL line. `read_entries`, `verify` (recompute each hash, check the
+    `prev_entry_hash` linkage, return the **exact break seq** or OK).
+- **`report.py`** — the methodology report generator (moved here from `export/`); renders purely
+  from a ledger entry's record so it **regenerates byte-identically**. The export runner appends
+  the entry, then renders the report *from the entry*.
+
+Settings: `operator: str = "ridecloak-pipeline"` (env `RIDECLOAK_OPERATOR`).
+Wire `ledger.append` into **every** CLI command; add **`ridecloak verify-ledger`** (walks the
+chain, prints OK or the exact break point, exit non-zero on break). The ledger is append-only
+(the one non-idempotent artifact); the reproduce script truncates it before a canonical run.
+
+Tests (`test_ledger.py`): append→verify passes on an intact chain; **mutating a historical entry
+makes verify report the exact break seq**; `prev_entry_hash` linkage enforced; `entry_hash`
+excludes itself and is deterministic; **methodology report regenerates byte-identical** from an
+export entry.
+
 **Accept when:** every pipeline command appends an entry; verify passes on an intact ledger; a
 test mutating a historical entry makes verify report the exact break point; the methodology
 report regenerates byte-identical from the same entry.
+**Decided (D-0010):** every command chained; operator `ridecloak-pipeline`; entry embeds the
+full audit; genesis `"0"*64`.
 
 ### ☐ Phase 6 — AI triage agent with guardrails  (est. 2–3 days, needs `ANTHROPIC_API_KEY`)
 Build: `ridecloak triage --request "<text>"`; Claude parses request → `{requester, scope,

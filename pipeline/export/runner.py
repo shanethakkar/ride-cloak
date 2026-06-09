@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 from config.settings import Settings
-from pipeline.export import report
+from pipeline.attest import ledger, report
 from pipeline.export.profiles import compile_policy
 from pipeline.io import approvals, salts, writers
 from pipeline.transform import generalize, kanon, pseudonymize, suppress
@@ -135,10 +135,19 @@ def _refusal(
         "output_path": None,
         "transforms": [],
     }
-    md = report.render_markdown(result)
+    return _finalize(result, policy, source, settings)
+
+
+def _finalize(result: dict, policy: Policy, source: str, settings: Settings) -> dict:
+    """Append the audit to the ledger, then render the methodology report FROM the
+    entry so it regenerates byte-identically. Returns the written entry."""
+    entry = ledger.append(
+        settings.ledger_path, result, command="export", operator=settings.operator
+    )
+    md = report.render_markdown(entry)
     writers.write_text(settings.reports_dir / f"export_{policy.name}_{source}.md", md)
-    writers.write_json(settings.reports_dir / f"export_{policy.name}_{source}.json", result)
-    return result
+    writers.write_json(settings.reports_dir / f"export_{policy.name}_{source}.json", entry)
+    return entry
 
 
 def run_export(
@@ -211,7 +220,4 @@ def run_export(
         "reason": None,
         **audit,
     }
-    md = report.render_markdown(result)
-    writers.write_text(settings.reports_dir / f"export_{policy.name}_{source}.md", md)
-    writers.write_json(settings.reports_dir / f"export_{policy.name}_{source}.json", result)
-    return result
+    return _finalize(result, policy, source, settings)

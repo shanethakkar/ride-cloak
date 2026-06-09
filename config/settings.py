@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     # Default time-bucket for the risk ladder, in minutes.
     bucket_min_default: int = 15
 
+    # Operator recorded in every ledger entry (decisions.md D-0010). Generic by
+    # default so a local username never lands in the committed/public ledger.
+    operator: str = "ridecloak-pipeline"
+
     # Phase 6 only. Never logged.
     anthropic_api_key: str | None = None
 
@@ -100,6 +104,10 @@ class Settings(BaseSettings):
     @property
     def policies_dir(self) -> Path:
         return PROJECT_ROOT / "policies"
+
+    @property
+    def ledger_path(self) -> Path:
+        return self.outputs_dir / "ledger" / "ledger.jsonl"
 
     @property
     def secrets_dir(self) -> Path:

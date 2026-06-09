@@ -1,13 +1,13 @@
 # RideCloak methodology report — tlc_trip_submission v1
 
 - Source: `dev`
-- Generated: 2026-06-09T22:33:09.739672+00:00
+- Generated: 2026-06-09T23:19:20.831584+00:00
 - Output kind: row_level
 - Policy hash: `a6a1314ca81830f5...`
 - Health score: 99.9906 (gate passed)
-- Salt fingerprint: `f10ddfdccf2bba716e25010ba8bab1b7cf4bc6d9f3c720f8b89e2382ed2b7e89`
+- Salt fingerprint: `f94b69d05fc8aa487746938d91ac397791ddca9145eb91e8299558bb9cbc8f8a`
 - Output: `outputs\exports\tlc_trip_submission_dev.parquet`
-- Output SHA-256: `03689f301bd47b1d...`
+- Output SHA-256: `57cb897a72750a09...`
 
 ## Volume
 

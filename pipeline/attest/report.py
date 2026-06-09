@@ -1,15 +1,16 @@
-"""Render the per-export methodology report from the run audit (pure).
+"""Render the per-export methodology report (pure).
 
 Documents what was shared, what was withheld, why, and under which policy
-version. Phase 5 regenerates this byte-identically from the matching ledger entry,
-so the renderer must be a deterministic function of the audit dict alone.
+version. The renderer reads only audit fields, so it produces identical output
+whether handed the in-memory export audit or the ledger entry that embeds it —
+which is what makes the report regenerate byte-identically from the ledger.
 """
 
 from __future__ import annotations
 
 
 def render_markdown(result: dict) -> str:
-    """Committed-quality methodology report for one export run."""
+    """Committed-quality methodology report for one export run / ledger entry."""
     lines = [
         f"# RideCloak methodology report — {result['policy_name']} v{result['policy_version']}",
         "",

@@ -17,6 +17,13 @@ from config.settings import get_settings
 console = Console()
 
 
+def _append_ledger(settings, command: str, record: dict) -> dict:
+    """Append a hash-chained entry for a command run (decisions.md D-0010)."""
+    from pipeline.attest import ledger
+
+    return ledger.append(settings.ledger_path, record, command=command, operator=settings.operator)
+
+
 @click.group()
 @click.version_option(package_name="ridecloak")
 def main() -> None:
@@ -53,6 +60,15 @@ def fetch(month: str, refresh: bool) -> None:
         zone_manifest["sha256"][:12],
     )
     console.print(table)
+    _append_ledger(
+        settings,
+        "fetch",
+        {
+            "input_hash": None,
+            "output_hash": trip_manifest["sha256"],
+            "metrics": {"month": month, "row_count": trip_manifest["row_count"]},
+        },
+    )
 
 
 @main.command()
@@ -92,6 +108,15 @@ def synth(input_sel: str, month: str | None, seed: int | None) -> None:
     console.print(table)
     console.print(f"dev slice -> {result['slice_path']}")
     console.print(f"labels    -> {result['labels_path']}")
+    _append_ledger(
+        settings,
+        "synth",
+        {
+            "input_hash": None,
+            "output_hash": result["slice_sha256"],
+            "metrics": {k: result[k] for k in ("rows", "unique_riders", "notes", "spans")},
+        },
+    )
 
 
 @main.command()
@@ -140,6 +165,19 @@ def validate(input_sel: str, month: str | None) -> None:
     _print_validation_summary(result)
     console.print(f"report -> {json_path}")
     console.print(f"report -> {md_path}")
+    _append_ledger(
+        settings,
+        "validate",
+        {
+            "input_hash": None,
+            "output_hash": None,
+            "metrics": {
+                "health_score": result["health_score"],
+                "refused": result["refused"],
+                "source": result["source"],
+            },
+        },
+    )
     if result["refused"]:
         raise SystemExit(1)  # gate blocks: non-zero so pipeline scripts stop
 
@@ -222,6 +260,20 @@ def classify(input_sel: str) -> None:
     _print_classification_summary(result)
     console.print(f"report -> {json_path}")
     console.print(f"report -> {md_path}")
+    _append_ledger(
+        settings,
+        "classify",
+        {
+            "input_hash": None,
+            "output_hash": None,
+            "metrics": {
+                "precision": overall["precision"],
+                "recall": overall["recall"],
+                "f1": overall["f1"],
+                "passed": passed,
+            },
+        },
+    )
     if not passed:
         raise SystemExit(1)
 
@@ -296,6 +348,20 @@ def risk(input_sel: str, month: str | None, qi: str | None, bucket_min: int | No
     _print_risk_summary(result)
     console.print(f"report -> {json_path}")
     console.print(f"report -> {md_path}")
+    _append_ledger(
+        settings,
+        "risk",
+        {
+            "input_hash": None,
+            "output_hash": None,
+            "source": result["source"],
+            "metrics": {
+                "k": result["k"],
+                "bucket_min": result["bucket_min"],
+                "ladder": result["ladder"],
+            },
+        },
+    )
 
 
 def _risk_month(month: str, bucket: int, k: int, settings) -> dict:
@@ -439,7 +505,7 @@ def _export_mds_month(month: str, policy, policy_hash: str, settings) -> dict:
     """Scale path: compute the MDS aggregate over a full month in DuckDB (no pandas load)."""
     from datetime import UTC, datetime
 
-    from pipeline.export import report
+    from pipeline.attest import report
     from pipeline.io import duck, writers
 
     a = policy.aggregate
@@ -510,14 +576,11 @@ def _export_mds_month(month: str, policy, policy_hash: str, settings) -> dict:
         "refused": False,
         "reason": None,
     }
-    writers.write_text(
-        settings.reports_dir / f"export_{policy.name}_{source.replace(':', '_')}.md",
-        report.render_markdown(result),
-    )
-    writers.write_json(
-        settings.reports_dir / f"export_{policy.name}_{source.replace(':', '_')}.json", result
-    )
-    return result
+    entry = _append_ledger(settings, "export", result)
+    stem = f"export_{policy.name}_{source.replace(':', '_')}"
+    writers.write_text(settings.reports_dir / f"{stem}.md", report.render_markdown(entry))
+    writers.write_json(settings.reports_dir / f"{stem}.json", entry)
+    return entry
 
 
 def _print_export_summary(result: dict) -> None:
@@ -538,6 +601,20 @@ def _print_export_summary(result: dict) -> None:
     console.print(table)
 
 
+@main.command(name="verify-ledger")
+def verify_ledger() -> None:
+    """Walk the hash chain and report whether the audit ledger is intact."""
+    from pipeline.attest import ledger
+
+    settings = get_settings()
+    result = ledger.verify(settings.ledger_path)
+    if result["ok"]:
+        console.print(f"[green]Ledger intact[/green] — {result['entries']} entries verified")
+    else:
+        console.print(f"[red]Ledger BROKEN[/red] at seq {result['break_seq']}: {result['reason']}")
+        raise SystemExit(1)
+
+
 @main.command()
 @click.option("--request-id", required=True, help="Identifier of the request being approved.")
 @click.option("--note", default="", help="Optional approval note.")
@@ -552,6 +629,11 @@ def approve(request_id: str, note: str) -> None:
         request_id, settings.approvals_dir, operator=getpass.getuser(), note=note
     )
     console.print(f"[green]Approval recorded[/green] for '{request_id}' -> {path}")
+    _append_ledger(
+        settings,
+        "approve",
+        {"input_hash": None, "output_hash": None, "metrics": {"request_id": request_id}},
+    )
 
 
 if __name__ == "__main__":

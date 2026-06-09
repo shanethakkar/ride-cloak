@@ -1,7 +1,7 @@
 # RideCloak methodology report — mds_aggregate v1
 
 - Source: `dev`
-- Generated: 2026-06-09T22:31:53.517368+00:00
+- Generated: 2026-06-09T23:19:22.598945+00:00
 - Output kind: aggregate
 - Policy hash: `6844317ab135b45f...`
 - Health score: 99.9906 (gate passed)

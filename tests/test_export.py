@@ -48,6 +48,8 @@ def _settings(tmp_path) -> SimpleNamespace:
         reports_dir=tmp_path / "reports",
         approvals_dir=tmp_path / "approvals",
         salts_dir=tmp_path / "salts",
+        ledger_path=tmp_path / "ledger" / "ledger.jsonl",
+        operator="test",
     )
 
 

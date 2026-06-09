@@ -47,26 +47,33 @@
     "wav_match_flag",
     "wav_request_flag"
   ],
+  "command": "export",
+  "entry_hash": "56225f61af4504c5e07215e7bc8a73d8500c109d3dde055c1f4ac96be20e8cde",
   "gate": {
     "health_score": 99.9906,
     "refused": false
   },
-  "generated_utc": "2026-06-09T22:31:53.517368+00:00",
+  "generated_utc": "2026-06-09T23:19:22.598945+00:00",
   "input_hash": "f0aba3cd66373ccb98c408bbd77f4a5335ff87019b54a249c0111b2119d25411",
   "k_achieved": 5,
+  "operator": "ridecloak-pipeline",
   "output_hash": "431c602c3a31bc7c8d90099b18c2536becf51ab0c2534207379f3ce27451f9fc",
   "output_kind": "aggregate",
   "output_path": "outputs\\exports\\mds_aggregate_dev.csv",
   "policy_hash": "6844317ab135b45f9d413188ac4ce1e4059f172b43fa138d43956dea9b99c4c7",
   "policy_name": "mds_aggregate",
   "policy_version": 1,
+  "prev_entry_hash": "a71e9b0fa53578db8a1444ec407fb7b842e300858f8e8ef26ab8c81962692ff5",
   "reason": null,
   "refused": false,
   "requires_approval": false,
   "rows_in": 250000,
   "rows_out": 238153,
+  "run_id": "283d829b-15ae-402a-93e0-d00dfcc41b1d",
   "salt_fingerprint": "n/a",
+  "seq": 6,
   "source": "dev",
+  "timestamp_utc": "2026-06-09T23:19:22.614743+00:00",
   "transforms": [
     {
       "dimensions": [

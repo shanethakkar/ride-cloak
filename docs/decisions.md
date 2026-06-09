@@ -101,6 +101,27 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
 
+## D-0010 — Phase 5 attestation ledger
+- **Date:** 2026-06-09
+- **Status:** Accepted
+- **Decisions:**
+  1. **Every command appends a hash-chained entry** (fetch, synth, validate, classify, risk,
+     export, approve) — one provenance chain from ingest to release (SPEC literal).
+  2. **Operator label = a generic service id** (`ridecloak-pipeline`), configurable via
+     `RIDECLOAK_OPERATOR`. Keeps a local username out of the committed/public ledger.
+  3. **The ledger entry embeds the full export audit** (a superset of the SPEC §7 fields:
+     adds columns_shared/withheld, gate score, generated_utc, refused/reason). The methodology
+     report is then a pure function of the entry, so it **regenerates byte-identically** from the
+     ledger entry, and the whole entry is hash-protected.
+  4. `entry_hash = sha256(canonical_json(entry without entry_hash))`, chained via
+     `prev_entry_hash`; genesis `prev_entry_hash = "0"*64`. Append-only JSONL at
+     `outputs/ledger/ledger.jsonl` (committed showcase artifact).
+- **Why:** full provenance is the strongest audit story and matches the SPEC; a generic operator
+  avoids leaking a personal username into a public artifact; embedding the audit makes the
+  byte-identical regeneration structural rather than fragile.
+- **Note:** the ledger is append-only by design (the one non-idempotent artifact); the reproduce
+  script resets it at the start of a canonical run.
+
 ## D-0009 — Phase 4 export profiles
 - **Date:** 2026-06-09
 - **Status:** Accepted (closes the D-0003 time-bucket row)

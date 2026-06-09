@@ -1,7 +1,7 @@
 # RideCloak classification & PII detection report
 
 - Source: `dev`
-- Generated: 2026-06-09T21:43:25.244223+00:00
+- Generated: 2026-06-09T23:18:40.051568+00:00
 - Notes scanned: 4,952 (3,702 PII, 1,250 decoy)
 - spaCy model: `en_core_web_lg` | score threshold: 0.5
 - Targets: recall >= 0.95, precision >= 0.9
