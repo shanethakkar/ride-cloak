@@ -162,5 +162,90 @@ def _print_validation_summary(result: dict) -> None:
         console.print(f"reason: {result['reason']}")
 
 
+@main.command()
+@click.option(
+    "--input",
+    "input_sel",
+    required=True,
+    type=click.Choice(["dev"]),
+    help="'dev': classify columns and measure PII detection vs the synthetic labels.",
+)
+def classify(input_sel: str) -> None:
+    """Classify every column and measure Presidio detection precision/recall vs ground truth."""
+    from pipeline.classify import dictionary, evaluate, pii_scan, report
+    from pipeline.classify.dictionary import Tier
+    from pipeline.io import readers, writers
+
+    settings = get_settings()
+    cls = dictionary.load(settings.classification_yaml_path)
+    df = readers.read_parquet(settings.dev_slice_path)
+
+    unclassified = cls.unclassified(list(df.columns))
+    if unclassified:
+        console.print(f"[red]Unclassified columns:[/red] {unclassified}")
+        raise SystemExit(1)
+
+    noted = df[df["support_note"].notna()].sort_values("trip_id")
+    trip_ids = noted["trip_id"].tolist()
+    texts = noted["support_note"].astype(str).tolist()
+
+    console.print(f"[bold]Scanning[/bold] {len(texts):,} support notes with Presidio ...")
+    analyzer = pii_scan.build_analyzer()
+    detections = pii_scan.scan_texts(analyzer, texts)
+
+    labels = readers.read_parquet(settings.labels_path)
+    gold = evaluate.gold_from_labels(labels, trip_ids)
+    detection = evaluate.evaluate(detections, gold)
+
+    pii_notes = sum(1 for g in gold if g)
+    overall = detection["overall"]
+    targets = {"recall": 0.95, "precision": 0.90}
+    passed = overall["recall"] >= targets["recall"] and overall["precision"] >= targets["precision"]
+
+    result = {
+        "source": input_sel,
+        "model": pii_scan.DEFAULT_MODEL,
+        "threshold": pii_scan.DEFAULT_THRESHOLD,
+        "notes_scanned": len(texts),
+        "pii_notes": pii_notes,
+        "decoy_notes": len(texts) - pii_notes,
+        "classification": {t.value: len(cls.columns_in_tier(t)) for t in Tier},
+        "detection": detection,
+        "targets": targets,
+        "passed": passed,
+    }
+
+    json_path = writers.write_json(settings.reports_dir / "classification_dev.json", result)
+    md_path = writers.write_text(
+        settings.reports_dir / "classification_dev.md", report.render_markdown(result)
+    )
+    _print_classification_summary(result)
+    console.print(f"report -> {json_path}")
+    console.print(f"report -> {md_path}")
+    if not passed:
+        raise SystemExit(1)
+
+
+def _print_classification_summary(result: dict) -> None:
+    table = Table(title="PII detection (per entity)")
+    table.add_column("entity")
+    table.add_column("prec", justify="right")
+    table.add_column("recall", justify="right")
+    table.add_column("F1", justify="right")
+    for entity, m in result["detection"]["per_entity"].items():
+        table.add_row(entity, f"{m['precision']:.3f}", f"{m['recall']:.3f}", f"{m['f1']:.3f}")
+    o = result["detection"]["overall"]
+    table.add_row(
+        "[bold]overall[/bold]",
+        f"[bold]{o['precision']:.3f}[/bold]",
+        f"[bold]{o['recall']:.3f}[/bold]",
+        f"[bold]{o['f1']:.3f}[/bold]",
+    )
+    console.print(table)
+    t = result["targets"]
+    verdict = "[green]PASSED[/green]" if result["passed"] else "[red]FAILED[/red]"
+    console.print(f"targets recall>={t['recall']} precision>={t['precision']} -> {verdict}")
+
+
 if __name__ == "__main__":
     main()

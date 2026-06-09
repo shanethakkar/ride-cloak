@@ -1,0 +1,137 @@
+# RideCloak field classification dictionary (versioned).
+#
+# Tiers (decisions.md D-0007):
+#   direct    - identifies a person on its own; suppressed or pseudonymized on export
+#   quasi     - re-identifying in combination; generalized + fed to k-anonymity
+#   sensitive - special-category-adjacent or free-text PII; policy-controlled
+#   safe      - operational/financial, no personal identification
+#
+# Covers every column present in the dev slice (25 real HVFHV + synthetic layer).
+# A test enforces that no dev-slice column is left unclassified.
+version: 1
+columns:
+  # --- direct identifiers (synthetic layer + surrogate key) ----------------
+  trip_id:
+    tier: direct
+    entity_type: SURROGATE_ID
+    rationale: Surrogate join key; uniquely identifies a trip and its parties.
+  rider_id:
+    tier: direct
+    entity_type: RIDER_ID
+    rationale: Stable per-rider identifier.
+  rider_phone:
+    tier: direct
+    entity_type: PHONE_NUMBER
+    rationale: Direct contact identifier.
+  rider_email:
+    tier: direct
+    entity_type: EMAIL_ADDRESS
+    rationale: Direct contact identifier.
+  device_id:
+    tier: direct
+    entity_type: DEVICE_ID
+    rationale: Stable device identifier; links trips to a handset.
+  payment_token:
+    tier: direct
+    entity_type: PAYMENT_TOKEN
+    rationale: Payment instrument token.
+  driver_license_num:
+    tier: direct
+    entity_type: TLC_LICENSE
+    rationale: TLC driver license number.
+  driver_name:
+    tier: direct
+    entity_type: PERSON
+    rationale: Driver full name.
+  vehicle_plate:
+    tier: direct
+    entity_type: NY_PLATE
+    rationale: License plate; identifies a vehicle/driver.
+  vehicle_vin:
+    tier: direct
+    entity_type: VEHICLE_VIN
+    rationale: Vehicle identification number.
+
+  # --- quasi-identifiers (spatiotemporal; drive k-anonymity) ---------------
+  request_datetime:
+    tier: quasi
+    rationale: Timestamp; re-identifying combined with location.
+  on_scene_datetime:
+    tier: quasi
+    rationale: Timestamp; re-identifying combined with location.
+  pickup_datetime:
+    tier: quasi
+    rationale: Spatiotemporal point; primary re-identification vector.
+  dropoff_datetime:
+    tier: quasi
+    rationale: Spatiotemporal point; primary re-identification vector.
+  PULocationID:
+    tier: quasi
+    rationale: Pickup zone; primary re-identification vector.
+  DOLocationID:
+    tier: quasi
+    rationale: Dropoff zone; primary re-identification vector.
+  trip_miles:
+    tier: quasi
+    rationale: Trip geometry; narrows origin/destination in combination.
+  trip_time:
+    tier: quasi
+    rationale: Trip duration; narrows origin/destination in combination.
+
+  # --- sensitive (special-category-adjacent / free-text PII) ---------------
+  support_note:
+    tier: sensitive
+    rationale: Free text that may embed names, contacts, addresses, identifiers.
+  access_a_ride_flag:
+    tier: sensitive
+    rationale: Paratransit use; reveals disability status (special-category-adjacent).
+  wav_request_flag:
+    tier: sensitive
+    rationale: Wheelchair-accessible request; reveals disability status.
+  wav_match_flag:
+    tier: sensitive
+    rationale: Wheelchair-accessible match; reveals disability status.
+
+  # --- safe (operational / financial) --------------------------------------
+  hvfhs_license_num:
+    tier: safe
+    rationale: Base license category (HV0003 = Uber); not personal.
+  dispatching_base_num:
+    tier: safe
+    rationale: Dispatching base code; business entity, not personal.
+  originating_base_num:
+    tier: safe
+    rationale: Originating base code; business entity, not personal.
+  base_passenger_fare:
+    tier: safe
+    rationale: Financial amount; not identifying on its own.
+  tolls:
+    tier: safe
+    rationale: Financial amount.
+  bcf:
+    tier: safe
+    rationale: Black Car Fund fee.
+  sales_tax:
+    tier: safe
+    rationale: Financial amount.
+  congestion_surcharge:
+    tier: safe
+    rationale: Financial amount.
+  airport_fee:
+    tier: safe
+    rationale: Financial amount.
+  tips:
+    tier: safe
+    rationale: Financial amount.
+  driver_pay:
+    tier: safe
+    rationale: Financial amount.
+  cbd_congestion_fee:
+    tier: safe
+    rationale: Financial amount.
+  shared_request_flag:
+    tier: safe
+    rationale: Shared-ride request flag; operational.
+  shared_match_flag:
+    tier: safe
+    rationale: Shared-ride match flag; operational.

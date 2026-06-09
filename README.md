@@ -20,6 +20,9 @@ This README is a stub; the recruiter-facing README is written in Phase 8. For no
 
 ```powershell
 uv sync
+uv run python -m spacy download en_core_web_lg   # Presidio NER model (Phase 2)
 uv run ridecloak fetch --month 2026-04
 uv run ridecloak synth --input dev
+uv run ridecloak validate --input dev
+uv run ridecloak classify --input dev
 ```

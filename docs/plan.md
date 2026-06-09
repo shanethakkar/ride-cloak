@@ -13,19 +13,22 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 1** (2026-06-09) — two-tier validation gate (Pandera Tier-1 +
-  equal-weighted 0–100 health score), dev + scale-safe month paths. Clean 2026-04 scores 99.99
-  (dev and full 15.4M-row month, the latter in 5.5s via DuckDB single-pass, no pandas);
-  corrupted fixture scores 78.83 and is refused. `pytest` (30 passed) and `ruff` green.
-  See [findings/phase-1.md](findings/phase-1.md).
-- **Phases completed:** 0, 1.
-- **Next step:** Begin **Phase 2** — `classification.yaml` tiering every column; Presidio over
-  `support_note` + custom recognizers (TLC license, NY plate, VIN); precision/recall/F1 vs the
-  `labels.parquet` ground truth (target recall ≥ 0.95, precision ≥ 0.90).
+- **Last completed:** **Phase 2** (2026-06-09) — classification dictionary (all 36 columns
+  tiered) + Presidio detection over the synthetic notes. Extended synth to 8 entity types;
+  6 custom recognizers + overlap deconfliction. Measured **overall precision 0.997, recall
+  0.998** vs ground truth (targets 0.90/0.95 cleared with margin). `pytest` (51 passed), ruff
+  green. See [findings/phase-2.md](findings/phase-2.md).
+- **Phases completed:** 0, 1, 2.
+- **Next step:** Begin **Phase 3** — transform engine: suppression, salted-SHA-256
+  pseudonymization (per-export salt + ledger fingerprint), temporal rounding, spatial rollup,
+  and k-anonymity (equivalence classes in DuckDB SQL, small-cell suppression, before/after
+  uniqueness). **Decides final k (default 5).**
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
-  extra months → Shane). Month locked: 2026-04 (D-0004). spaCy model choice → Phase 2.
+  extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
   say `safeharbor` translate to `ridecloak`.
+- **Setup note:** Presidio needs the spaCy model — `uv run python -m spacy download
+  en_core_web_lg` (not a pinned dependency).
 
 ---
 
@@ -93,14 +96,61 @@ findings.
 78.83 (REFUSED); month path validates 15.4M rows in 5.5s with no pandas load; 30 tests pass.
 Findings: [findings/phase-1.md](findings/phase-1.md).
 
-### ☐ Phase 2 — Classification & PII detection  (est. 2–3 days)
-Build: `classification.yaml` tiering every column direct/quasi/sensitive/safe; Presidio over
-`support_note`; custom recognizers (TLC license, NY plate, VIN); evaluation harness computing
-precision/recall/F1 per entity vs ground truth.
-**Accept when:** `ridecloak classify --input dev` writes a detection report with per-entity
-precision/recall; **recall ≥ 0.95 and precision ≥ 0.90** on labeled spans (tune + document in
-findings); a test enforces every schema column appears in `classification.yaml`.
-**Decides:** spaCy model (`en_core_web_lg` vs `_sm` fallback).
+### ☑ Phase 2 — Classification & PII detection  (done 2026-06-09)
+
+**Result: overall precision 0.997, recall 0.998 (targets 0.90/0.95 met). 51 tests pass.**
+Findings: [findings/phase-2.md](findings/phase-2.md). Design below (decisions D-0007).
+
+Deps to add: `presidio-analyzer`, `spacy`; download `en_core_web_lg` (~560MB,
+`uv run python -m spacy download en_core_web_lg`). (`presidio-anonymizer` waits for Phase 3.)
+
+Step A — **extend the synthetic layer** (revises Phase 0 per D-0007): move the license/plate/VIN
+value generators into `pipeline/synth/identifiers.py` (shared by generator + templates, no
+import cycle); add support-note templates embedding `TLC_LICENSE`, `NY_PLATE`, `VEHICLE_VIN`
+with context words ("TLC license", "plate", "VIN") so context-aware recognizers can hit them
+precisely. Re-run `ridecloak synth --input dev` (dev-slice hash changes; determinism holds).
+Phase 0/1 tests remain green (validation ignores synth columns; synth tests are structural).
+
+Modules under `pipeline/classify/`:
+- **`dictionary.py`** — pydantic models (Tier enum: direct/quasi/sensitive/safe; `ColumnClass`;
+  `ClassificationDict`) that load + validate **`config/classification.yaml`** (versioned). Tiers
+  for every dev-slice column (25 real + synth + trip_id):
+  - direct: trip_id, driver_license_num, driver_name, vehicle_plate, vehicle_vin, rider_id,
+    rider_phone, rider_email, payment_token, device_id
+  - quasi: request/on_scene/pickup/dropoff_datetime, PULocationID, DOLocationID, trip_miles,
+    trip_time
+  - sensitive: support_note, access_a_ride_flag, wav_request_flag, wav_match_flag (D-0007)
+  - safe: hvfhs_license_num, dispatching/originating_base_num, all money fields,
+    shared_request_flag, shared_match_flag
+- **`recognizers.py`** — context-aware `PatternRecognizer`s: `TLC_LICENSE` (6–7 digit + context),
+  `NY_PLATE` (`[A-Z]{3}-?\d{4}`), `VEHICLE_VIN` (17 alnum excl. I/O/Q + context). Context words
+  are the precision lever against decoy numerics (trip ids, fares).
+- **`pii_scan.py`** — build `AnalyzerEngine` (spaCy lg) + register custom recognizers; scan a
+  series of `support_note` texts → detections (entity_type, start, end, score); score threshold
+  is a tunable param. Scans free text only; structured columns are dictionary-classified.
+- **`evaluate.py`** — greedy one-to-one matcher: a detection is a TP if it **overlaps** a label
+  of **compatible type** (D-0007); compute per-entity + overall precision/recall/F1. Includes
+  decoy notes so false positives are penalized.
+
+CLI **`ridecloak classify --input dev`**: assert every column is classified (else fail);
+scan notes; evaluate vs `labels.parquet`; write `outputs/reports/classification_dev.{json,md}`
++ Rich per-entity table; report PASS/FAIL vs the 0.95/0.90 targets.
+
+Tuning loop (documented in findings): baseline lg + defaults → measure per-entity P/R → close
+gaps (numeric license precision via context; address-without-suffix LOCATION recall; dotted
+phone formats) by tuning recognizers/context/thresholds → re-measure until targets met.
+
+Tests (`test_recognizers.py`, `test_classify.py`): custom recognizers fire on context strings
+and ignore decoy numerics; `evaluate` returns correct P/R/F1 on synthetic detections (overlap,
+type-mismatch, partial-overlap cases); **every dev-slice column appears in classification.yaml**
+(SPEC acceptance); skippable integration test runs full classify and asserts recall ≥ 0.95,
+precision ≥ 0.90.
+
+**Accept when:** `ridecloak classify --input dev` writes a per-entity precision/recall report;
+recall ≥ 0.95 and precision ≥ 0.90 on labeled spans (tuning documented in findings); a test
+enforces no unclassified columns.
+**Decided:** extend synth & measure custom recognizers; `en_core_web_lg`; disability flags
+sensitive; overlap+type match (all D-0007).
 
 ### ☐ Phase 3 — Transform engine  (est. 3 days)
 Build: suppression; salted SHA-256 pseudonymization (per-export salt + ledger fingerprint);

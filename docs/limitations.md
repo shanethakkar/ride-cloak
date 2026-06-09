@@ -50,7 +50,10 @@ the measured bound.
   acceptance bar (recall ≥ 0.95, precision ≥ 0.90 on labeled spans) is a measured floor on the
   test set, **not** a guarantee on unseen data. The residual-risk caveat is stated wherever the
   numbers appear.
-- **Measured bound:** _TBD — fill from Phase 2 evaluation (per-entity precision/recall/F1)._
+- **Measured bound (Phase 2, dev slice, 7,826 labeled spans across 8 entity types):** overall
+  precision 0.997, recall 0.998, F1 0.998; per-entity recall >= 0.994 and precision >= 0.986.
+  These hold on the *synthetic labeled set* and are a measured floor there, not a guarantee on
+  unseen production text. See [findings/phase-2.md](findings/phase-2.md).
 
 ## L-04 — This is a demo, not production data-sharing infrastructure
 - **Limitation:** RideCloak demonstrates the data-transformation and audit core. It does **not**
@@ -92,5 +95,5 @@ the measured bound.
 ---
 
 ## Metrics to backfill (replace "TBD" with measured values as phases complete)
-- L-03: per-entity precision / recall / F1, and the N of labeled spans (Phase 2).
+- ~~L-03: per-entity precision / recall / F1 (Phase 2).~~ Done (see L-03).
 - L-02: before/after re-identification uniqueness at the chosen k (Phase 3).

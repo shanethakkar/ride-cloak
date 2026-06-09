@@ -84,6 +84,10 @@ class Settings(BaseSettings):
     def secrets_dir(self) -> Path:
         return PROJECT_ROOT / "secrets"
 
+    @property
+    def classification_yaml_path(self) -> Path:
+        return PROJECT_ROOT / "config" / "classification.yaml"
+
     def raw_parquet_path(self, month: str) -> Path:
         """Local cache path for a month's raw HVFHV parquet (e.g. ``2026-04``)."""
         return self.data_raw_dir / f"fhvhv_tripdata_{month}.parquet"

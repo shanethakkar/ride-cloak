@@ -101,6 +101,31 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
 
+## D-0007 — Phase 2 classification & PII detection design
+- **Date:** 2026-06-09
+- **Status:** Accepted
+- **Decisions:**
+  1. **Extend the synthetic support notes** to embed TLC-license, NY-plate, and VIN spans (with
+     realistic context words), regenerating the dev slice + labels. This makes the three custom
+     recognizers measurable against ground truth so "extended Presidio and measured/closed the
+     detection gap" is an honest, quantified claim — not just structured-column tagging. This
+     revises the Phase 0 support-note scope (was 5 entity types: PERSON, PHONE_NUMBER,
+     EMAIL_ADDRESS, LOCATION, CREDIT_CARD; now 8, adding TLC_LICENSE, NY_PLATE, VEHICLE_VIN).
+     The dev-slice hash changes; determinism (same seed = same hash) still holds.
+  2. **spaCy model: `en_core_web_lg`** backs Presidio NER (SPEC default; best non-transformer
+     accuracy for the PERSON/LOCATION recall ≥ 0.95 target). Closes the Phase 0/SPEC §3 open item.
+  3. **Disability/accessibility flags are `sensitive`** in classification.yaml:
+     `access_a_ride_flag`, `wav_request_flag`, `wav_match_flag` (GDPR special-category-adjacent).
+     The shared-ride flags stay `safe`.
+  4. **Detection scoring = overlap + compatible entity type** (any character overlap counts as a
+     true positive). Standard in PII-eval literature; tolerant of boundary/tokenization jitter.
+- **Why:** (1) without the formats in free text the recognizers are untestable; (2) recall
+  target needs the stronger model; (3) accessibility status is a genuine privacy dimension;
+  (4) exact-boundary matching understates real performance and is brittle to tokenization.
+- **Implementation note:** extending the synth touches the Phase 0 generator/templates — handled
+  as the first step of Phase 2, with `ridecloak synth --input dev` re-run. Custom-recognizer
+  entity types: `TLC_LICENSE`, `NY_PLATE`, `VEHICLE_VIN`.
+
 ## D-0005 — labels.parquet stays under gitignored data/synth/ (not committed)
 - **Date:** 2026-06-09
 - **Status:** Accepted
@@ -120,5 +145,4 @@ _Move these into numbered decisions as they resolve._
   builds the Pandera contract from that file.
 - ~~Whether `data/synth/labels.parquet` is committed.~~ **Resolved:** D-0005 (not committed,
   reproducible from seed).
-- spaCy model choice: `en_core_web_lg` vs `en_core_web_sm` fallback if download size is a
-  problem; escalate if accuracy suffers (SPEC §3). → resolve in Phase 2.
+- ~~spaCy model choice.~~ **Resolved:** D-0007 — `en_core_web_lg`.

@@ -21,6 +21,8 @@ dependencies = [
     "pydantic>=2.8",
     "pydantic-settings>=2.5",
     "pandera>=0.31.1",
+    "presidio-analyzer>=2.2.362",
+    "spacy>=3.8.14",
 ]
 
 [project.scripts]

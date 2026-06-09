@@ -115,11 +115,12 @@ Python 3.12 via **uv** (`uv init`, `uv add`, commit `uv.lock`). Presidio needs a
 accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first.
 
 ## Current State
-- **Phases 0–1 complete (2026-06-09).** Phase 0: scaffold, ingest + manifest, schema
-  introspection, synthetic PII layer + labels, deterministic 250K dev slice. Phase 1: two-tier
-  validation gate (Pandera Tier-1 + equal-weighted 0–100 score), dev + scale-safe month paths
-  (full 15.4M-row month validates in 5.5s, no pandas). Clean data scores 99.99; corrupted
-  fixture 78.83 (refused). 30 tests pass, ruff green.
-- **Next step:** Phase 2 — `classification.yaml` tiering every column; Presidio over
-  `support_note` + custom recognizers (TLC license, NY plate, VIN); precision/recall/F1 vs
-  `labels.parquet` (target recall ≥ 0.95, precision ≥ 0.90). See [docs/plan.md](docs/plan.md).
+- **Phases 0–2 complete (2026-06-09).** P0: scaffold, ingest, synthetic PII layer + labels,
+  250K dev slice. P1: two-tier validation gate (Pandera + equal-weighted 0–100 score), dev +
+  scale-safe month paths. P2: classification dictionary (all 36 columns tiered) + Presidio
+  detection over the synthetic notes — 8 entity types, 6 custom recognizers, measured **overall
+  precision 0.997, recall 0.998** vs ground truth. 51 tests pass, ruff green.
+- **Next step:** Phase 3 — transform engine: suppression, salted-SHA-256 pseudonymization,
+  temporal rounding, spatial rollup, k-anonymity (equivalence classes in DuckDB SQL, small-cell
+  suppression, before/after uniqueness). Decides final k. See [docs/plan.md](docs/plan.md).
+- **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.

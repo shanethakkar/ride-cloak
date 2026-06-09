@@ -13,13 +13,12 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from string import ascii_uppercase
 
 import numpy as np
 import pandas as pd
 from faker import Faker
 
-from pipeline.synth import templates
+from pipeline.synth import identifiers, templates
 
 # Fixed namespace so trip_id is a deterministic UUID5 of row attributes.
 TRIP_ID_NAMESPACE = uuid.UUID("6f1d3b2a-0c4e-5a7b-9d8c-1e2f3a4b5c6d")
@@ -44,37 +43,11 @@ SYNTH_COLUMNS = ["trip_id", *RIDER_FIELDS, *DRIVER_FIELDS, "support_note"]
 NOTE_RATE = 0.02  # fraction of trips carrying a support note
 PII_NOTE_SHARE = 0.75  # of noted trips, fraction that are PII notes (rest are decoys)
 
-_VIN_CHARS = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789"  # excludes I, O, Q per VIN spec
-
 
 def compute_trip_id(df: pd.DataFrame) -> pd.Series:
     """Deterministic UUID5 surrogate key from stable trip attributes."""
     keys = df[TRIP_ID_KEYS].astype(str).agg("|".join, axis=1)
     return keys.map(lambda k: str(uuid.uuid5(TRIP_ID_NAMESPACE, k)))
-
-
-def _uuid4_from(rng: np.random.Generator) -> str:
-    """Deterministic UUID4-shaped value sourced from the seeded RNG."""
-    return str(uuid.UUID(bytes=rng.bytes(16), version=4))
-
-
-def _plate(rng: np.random.Generator) -> str:
-    """NY-style plate: three letters, hyphen, four digits."""
-    letters = "".join(rng.choice(list(ascii_uppercase), size=3))
-    return f"{letters}-{int(rng.integers(1000, 10000))}"
-
-
-def _vin(rng: np.random.Generator) -> str:
-    return "".join(rng.choice(list(_VIN_CHARS), size=17))
-
-
-def _license(rng: np.random.Generator) -> str:
-    """TLC-style 6-7 digit driver license number."""
-    return str(int(rng.integers(100_000, 10_000_000)))
-
-
-def _payment_token(rng: np.random.Generator) -> str:
-    return rng.bytes(8).hex()  # 16 hex chars
 
 
 def _zipf_weights(n: int, exponent: float) -> np.ndarray:
@@ -85,20 +58,22 @@ def _zipf_weights(n: int, exponent: float) -> np.ndarray:
 
 def _build_rider_pool(n: int, faker: Faker, rng: np.random.Generator) -> dict[str, np.ndarray]:
     return {
-        "rider_id": np.array([_uuid4_from(rng) for _ in range(n)], dtype=object),
+        "rider_id": np.array([identifiers.uuid4_from(rng) for _ in range(n)], dtype=object),
         "rider_phone": np.array([faker.phone_number() for _ in range(n)], dtype=object),
         "rider_email": np.array([faker.unique.email() for _ in range(n)], dtype=object),
-        "device_id": np.array([_uuid4_from(rng) for _ in range(n)], dtype=object),
-        "payment_token": np.array([_payment_token(rng) for _ in range(n)], dtype=object),
+        "device_id": np.array([identifiers.uuid4_from(rng) for _ in range(n)], dtype=object),
+        "payment_token": np.array([identifiers.payment_token(rng) for _ in range(n)], dtype=object),
     }
 
 
 def _build_driver_pool(n: int, faker: Faker, rng: np.random.Generator) -> dict[str, np.ndarray]:
     return {
-        "driver_license_num": np.array([_license(rng) for _ in range(n)], dtype=object),
+        "driver_license_num": np.array(
+            [identifiers.tlc_license(rng) for _ in range(n)], dtype=object
+        ),
         "driver_name": np.array([faker.name() for _ in range(n)], dtype=object),
-        "vehicle_plate": np.array([_plate(rng) for _ in range(n)], dtype=object),
-        "vehicle_vin": np.array([_vin(rng) for _ in range(n)], dtype=object),
+        "vehicle_plate": np.array([identifiers.ny_plate(rng) for _ in range(n)], dtype=object),
+        "vehicle_vin": np.array([identifiers.vehicle_vin(rng) for _ in range(n)], dtype=object),
     }
 
 

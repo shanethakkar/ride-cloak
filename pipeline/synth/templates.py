@@ -18,6 +18,8 @@ from collections.abc import Callable
 from faker import Faker
 from numpy.random import Generator
 
+from pipeline.synth import identifiers
+
 # A part is a literal str, or a PII tuple: ("PII", entity_type, value).
 PiiPart = tuple[str, str, str]
 Part = str | PiiPart
@@ -31,21 +33,17 @@ PHONE = "PHONE_NUMBER"
 EMAIL = "EMAIL_ADDRESS"
 LOCATION = "LOCATION"
 CREDIT_CARD = "CREDIT_CARD"
+# Custom entity types for the Phase 2 recognizers (decisions.md D-0007).
+TLC_LICENSE = "TLC_LICENSE"
+NY_PLATE = "NY_PLATE"
+VEHICLE_VIN = "VEHICLE_VIN"
 
 
 # --- value generators --------------------------------------------------------
 
 
 def _phone(rng: Generator) -> str:
-    """US 10-digit phone in a separator format chosen to stress detection."""
-    area = rng.integers(200, 989)
-    pre = rng.integers(200, 989)
-    line = rng.integers(0, 9999)
-    sep = rng.choice([".", " ", "-", ""])
-    paren = bool(rng.integers(0, 2))
-    if paren:
-        return f"({area}) {pre}-{line:04d}"
-    return f"{area}{sep}{pre}{sep}{line:04d}"
+    return identifiers.phone(rng)
 
 
 def _address_no_suffix(faker: Faker, rng: Generator) -> str:
@@ -125,6 +123,40 @@ def _t_multi(faker: Faker, rng: Generator) -> PartList:
     ]
 
 
+def _t_license_complaint(faker: Faker, rng: Generator) -> PartList:
+    # "TLC license" context precedes the bare 6-7 digit number so a context-aware
+    # recognizer can distinguish it from decoy numerics.
+    return [
+        "Complaint filed against TLC license ",
+        (PII, TLC_LICENSE, identifiers.tlc_license(rng)),
+        "; driver ",
+        (PII, PERSON, faker.name()),
+        " was contacted for follow-up.",
+    ]
+
+
+def _t_plate_report(faker: Faker, rng: Generator) -> PartList:
+    return [
+        "Rider reported plate ",
+        (PII, NY_PLATE, identifiers.ny_plate(rng)),
+        " for an incident near ",
+        (PII, LOCATION, _address_no_suffix(faker, rng)),
+        ".",
+    ]
+
+
+def _t_vin_claim(faker: Faker, rng: Generator) -> PartList:
+    return [
+        "Lost-and-found claim logged for VIN ",
+        (PII, VEHICLE_VIN, identifiers.vehicle_vin(rng)),
+        "; rider ",
+        (PII, PERSON, faker.name()),
+        " reachable at ",
+        (PII, PHONE, _phone(rng)),
+        ".",
+    ]
+
+
 # --- decoy templates (zero labeled spans; numerics must not be flagged) ------
 
 
@@ -143,6 +175,13 @@ def _d_generic(faker: Faker, rng: Generator) -> PartList:
     return [f"Rider noted the driver waited {waited} minutes at the curb. Marked informational."]
 
 
+def _d_confirmation(faker: Faker, rng: Generator) -> PartList:
+    # A bare 7-digit confirmation number with NO license context: a recognizer
+    # that fires here is producing a false positive (precision test for TLC_LICENSE).
+    conf = rng.integers(1_000_000, 9_999_999)
+    return [f"Confirmation number {conf} issued for the rebooked ride. No further action."]
+
+
 PII_TEMPLATES: list[Callable[[Faker, Generator], PartList]] = [
     _t_name_phone,
     _t_email_followup,
@@ -150,10 +189,14 @@ PII_TEMPLATES: list[Callable[[Faker, Generator], PartList]] = [
     _t_card_dispute,
     _t_pickup_correction,
     _t_multi,
+    _t_license_complaint,
+    _t_plate_report,
+    _t_vin_claim,
 ]
 
 DECOY_TEMPLATES: list[Callable[[Faker, Generator], PartList]] = [
     _d_fare_dispute,
     _d_trip_ref,
     _d_generic,
+    _d_confirmation,
 ]
