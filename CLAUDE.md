@@ -125,8 +125,11 @@ accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first
   guardrails decide and fail closed, no import path to the runner (grep-enforced); injection →
   REFUSE, in-policy → ALLOW; triage chained in the ledger. P7: multi-month (2026-01..04, ~61M
   Uber trips) dashboard extracts (`dashboard-extract` → 8 tidy CSVs) + `figures` (matplotlib PNGs:
-  uniqueness ladder, detection P/R, month trends); ledger 25 entries intact. 109 tests pass.
-- **Next steps:** explainer video (Remotion, from the figures); Phase 8 ship (README, reproduce
-  script, article, repo public). Human: Tableau from `outputs/dashboard/*.csv`, article.
+  uniqueness ladder, detection P/R, month trends). P8 (ship): `scripts/reproduce.{sh,ps1}` (verified
+  end to end, ledger 26 entries intact), full `README.md`, first-draft article
+  (`docs/article-draft.md`). 109 tests pass, ruff green. **All agent-side work (Phases 0–8) done.**
+- **Remaining (human):** publish the article, build the Tableau dashboard from
+  `outputs/dashboard/*.csv`, make the repo public. The explainer video was cut (article + repo +
+  dashboard carry the scope).
 - **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.
   Phase 6 triage needs `RIDECLOAK_ANTHROPIC_API_KEY` in `.env`.

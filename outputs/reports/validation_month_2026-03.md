@@ -1,7 +1,7 @@
 # RideCloak validation report
 
 - Source: `month:2026-03`
-- Generated: 2026-06-10T00:56:23.922136+00:00
+- Generated: 2026-06-10T01:34:31.655119+00:00
 - Rows: 15,956,175
 - Gate threshold: 90
 - **Verdict: PASSED**

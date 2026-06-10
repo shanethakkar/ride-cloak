@@ -1,13 +1,13 @@
 # RideCloak methodology report — mds_aggregate v1
 
 - Source: `month:2026-04`
-- Generated: 2026-06-10T00:56:42.431947+00:00
+- Generated: 2026-06-10T01:34:49.028282+00:00
 - Output kind: aggregate
 - Policy hash: `6844317ab135b45f...`
 - Health score: None (gate passed)
 - Salt fingerprint: `n/a`
 - Output: `outputs\exports\mds_aggregate_month_2026-04.csv`
-- Output SHA-256: `eea63b343887358b...`
+- Output SHA-256: `3255f0ec10cedcf7...`
 
 ## Volume
 

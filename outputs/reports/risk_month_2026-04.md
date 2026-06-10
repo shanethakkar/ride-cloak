@@ -1,7 +1,7 @@
 # RideCloak re-identification risk report
 
 - Source: `month:2026-04`
-- Generated: 2026-06-10T00:56:40.436343+00:00
+- Generated: 2026-06-10T01:34:47.107289+00:00
 - Rows: 15,378,858
 - Time bucket: 15 min | k: 5
 

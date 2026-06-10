@@ -13,17 +13,15 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 7** (2026-06-09) — multi-month dashboard extracts + figures.
-  Ingested 2026-01..04 (~83.9M trips, ~61M Uber across 4 months) and ran the scale stages per
-  month; `ridecloak dashboard-extract` writes 8 tidy CSVs and `ridecloak figures` renders the
-  matplotlib PNGs (uniqueness ladder 90.1%→0.1%, detection P/R, month trends). Ledger now 25
-  entries, verify intact. `pytest` (109 passed), ruff green. See [findings/phase-7.md](findings/phase-7.md).
-- **Phases completed:** 0, 1, 2, 3, 4, 5, 6, 7 (agent side).
-- **Next steps:** (a) **Explainer video** — Remotion MP4 from the figures + metrics (toolchain
-  confirmed: Node present, Remotion brings its own renderer); (b) **Phase 8 — ship:** README
-  (recruiter intro, honest-scope, reproduce), `reproduce.ps1/.sh`, the article on shanethakkar.com
-  (opens on the LADOT lawsuit, embeds the figures + dashboard), repo public. **Human tasks:** the
-  Tableau Public dashboard (from `outputs/dashboard/*.csv`) and the article writing/publishing.
+- **Last completed:** **Phase 8** (2026-06-09, agent side) — ship. `scripts/reproduce.{sh,ps1}`
+  run the whole pipeline and regenerate every committed artifact (verified end to end; ledger 26
+  entries intact). Full recruiter-facing `README.md` and a first-draft article
+  (`docs/article-draft.md`). `pytest` (109 passed), ruff green. See [findings/phase-8.md](findings/phase-8.md).
+- **Phases completed:** 0–8 (all agent-side work done).
+- **Remaining (human, SPEC §13):** build + publish the **Tableau Public dashboard** from
+  `outputs/dashboard/*.csv`; edit + publish the **article** (`docs/article-draft.md`) on
+  shanethakkar.com; make the **repo public**. The explainer video was considered and **cut** (the
+  article + repo + dashboard carry the scope for a DS portfolio).
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
@@ -381,12 +379,14 @@ suppression matches its ledger entry (traceability); a figure smoke test renders
 a ledger field; the 4-month trends are populated; figures render.
 **Decided (D-0012):** 4 months (2026-01..04); figures bundled in.
 
-### ☐ Phase 8 — Ship  (est. 2–3 days, mostly human)
-README (recruiter intro, honest-scope statement, reproduce instructions), `reproduce.ps1/.sh`
-(fetch → synth → validate → classify → risk → all three exports → verify-ledger), article on
-shanethakkar.com (opens on the LADOT lawsuit), matplotlib figures, repo public.
-**Accept when:** fresh clone + reproduce script completes end-to-end on one month; README
-contains zero unearned claims.
+### ☑ Phase 8 — Ship  (agent side done 2026-06-09; publish/Tableau/public are human)
+Built: `scripts/reproduce.{sh,ps1}` (verified end to end — ledger 26 entries intact), full
+`README.md` (LADOT framing, results table, architecture, honest-scope, links, hero figure), and
+`docs/article-draft.md` (first-draft article in Shane's voice). 109 tests pass.
+Findings: [findings/phase-8.md](findings/phase-8.md).
+**Human:** publish the article, build/publish the Tableau dashboard from `outputs/dashboard/`,
+make the repo public. **Accept when:** fresh clone + reproduce completes end-to-end (verified);
+README has zero unearned claims (every metric is a committed, reproducible artifact).
 
 ---
 
