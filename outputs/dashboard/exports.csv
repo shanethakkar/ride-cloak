@@ -1,0 +1,8 @@
+timestamp_utc,month,scope,policy_name,output_kind,rows_in,rows_out,cells_suppressed,suppression_rate,k_achieved,health_score,refused
+2026-06-09T23:19:20.867415+00:00,2026-04,dev,tlc_trip_submission,row_level,250000.0,250000.0,0.0,0.0,,99.9906,False
+2026-06-09T23:19:22.614743+00:00,2026-04,dev,mds_aggregate,aggregate,250000.0,238153.0,5988.0,0.023952,5.0,99.9906,False
+2026-06-09T23:19:24.181236+00:00,2026-04,dev,law_enforcement_extract,row_level,,,,,,,True
+2026-06-10T00:56:07.312000+00:00,2026-01,month,mds_aggregate,aggregate,15245631.0,15236553.0,4485.0,0.00029418264157121476,5.0,,False
+2026-06-10T00:56:18.533106+00:00,2026-02,month,mds_aggregate,aggregate,14166961.0,14159190.0,3952.0,0.0002789589101007619,5.0,,False
+2026-06-10T00:56:30.661355+00:00,2026-03,month,mds_aggregate,aggregate,15956175.0,15947250.0,4425.0,0.00027732210257157497,5.0,,False
+2026-06-10T00:56:42.445454+00:00,2026-04,month,mds_aggregate,aggregate,15378858.0,15370445.0,4217.0,0.0002742076167164038,5.0,,False

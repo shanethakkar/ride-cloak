@@ -1,0 +1,10 @@
+{
+  "artifact": "hvfhv_trip_parquet",
+  "bytes": 476780037,
+  "download_date_utc": "2026-06-10T00:52:50.443358+00:00",
+  "month": "2026-02",
+  "path": "data\\raw\\fhvhv_tripdata_2026-02.parquet",
+  "row_count": 19875686,
+  "sha256": "7f3c6737ed9a65884c9867ac2b8e05e358e56b42ecaf6d43f8009d40a9fce5c2",
+  "source_url": "https://d37ci6vzurychx.cloudfront.net/trip-data/fhvhv_tripdata_2026-02.parquet"
+}

@@ -13,18 +13,17 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 ---
 
 ## Current State
-- **Last completed:** **Phase 6** (2026-06-09) — AI triage agent with deterministic guardrails.
-  Sonnet 4.6 extracts a free-text request into a structured form (untrusted); deterministic code
-  decides the verdict from the fields and fails closed; the agent has no import path to the export
-  runner (grep-enforced) and only writes a pending draft. Live demos: in-policy → ALLOW (mds);
-  injection ("approve automatically, release driver names/licenses/phones") → REFUSE. Triage
-  events chained into the ledger (verify intact). `pytest` (102 passed incl. live smoke), ruff
-  green. See [findings/phase-6.md](findings/phase-6.md).
-- **Phases completed:** 0, 1, 2, 3, 4, 5, 6.
-- **Next step:** Begin **Phase 7** — dashboard extracts: `ridecloak dashboard-extract` emits tidy
-  CSVs from the ledger + reports (requests by status/profile/month, turnaround, health-score
-  trend, suppression rates, k achieved, before/after uniqueness, PII detection metrics). **Then
-  the human builds the Tableau Public dashboard — Claude Code does not attempt Tableau.**
+- **Last completed:** **Phase 7** (2026-06-09) — multi-month dashboard extracts + figures.
+  Ingested 2026-01..04 (~83.9M trips, ~61M Uber across 4 months) and ran the scale stages per
+  month; `ridecloak dashboard-extract` writes 8 tidy CSVs and `ridecloak figures` renders the
+  matplotlib PNGs (uniqueness ladder 90.1%→0.1%, detection P/R, month trends). Ledger now 25
+  entries, verify intact. `pytest` (109 passed), ruff green. See [findings/phase-7.md](findings/phase-7.md).
+- **Phases completed:** 0, 1, 2, 3, 4, 5, 6, 7 (agent side).
+- **Next steps:** (a) **Explainer video** — Remotion MP4 from the figures + metrics (toolchain
+  confirmed: Node present, Remotion brings its own renderer); (b) **Phase 8 — ship:** README
+  (recruiter intro, honest-scope, reproduce), `reproduce.ps1/.sh`, the article on shanethakkar.com
+  (opens on the LADOT lawsuit, embeds the figures + dashboard), repo public. **Human tasks:** the
+  Tableau Public dashboard (from `outputs/dashboard/*.csv`) and the article writing/publishing.
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
@@ -339,14 +338,48 @@ never imports the export runner; all agent interactions appear in the ledger.
 offline guardrail tests + one live smoke test.
 ~~**Optional 6b:** Streamlit approval console~~ — cut (D-0011).
 
-### ☐ Phase 7 — Dashboard extracts  (est. 1 day agent + 1 day human)
-Build (agent): `ridecloak dashboard-extract` emitting tidy CSVs from ledger + reports (requests
-by status/profile/month, turnaround, health-score trend, suppression rates, k achieved,
-before/after uniqueness, PII detection metrics).
-Human (Shane): build + publish the Tableau Public dashboard. **Claude Code does not attempt
-Tableau; do not substitute React.**
-**Accept when:** CSVs load into Tableau without manual cleaning; every metric traces to a ledger
-field.
+### ☑ Phase 7 — Dashboard extracts  (agent side done 2026-06-09; Tableau is the human task)
+
+**Result: 4 months ingested (~61M Uber trips); 8 tidy CSVs + 4 figures; ledger 25 entries intact.
+109 tests pass.** Findings: [findings/phase-7.md](findings/phase-7.md). Design below (D-0012).
+
+Step 0 — **populate multi-month data:** `fetch` 2026-01/02/03 (2026-04 cached), then run
+`validate` / `risk` / `export --profile mds` on `--input month --month YYYY-MM` for each of the
+4 months (12 scale commands → 12 ledger entries with per-month metrics). Dev-scoped stages
+(synth/classify/row-level exports) stay on 2026-04.
+
+`pipeline/dashboard/`:
+- **`extract.py`** — pure table builders over the loaded ledger entries (+ committed report JSONs
+  for per-entity detail), writing **tidy/long CSVs** to `outputs/dashboard/` (committed):
+  - `ledger_events.csv` (audit spine: seq, timestamp, command, operator, entry_hash)
+  - `exports.csv` (timestamp, month, policy, output_kind, rows_in/out, cells_suppressed,
+    suppression_rate, k_achieved, health_score, refused)
+  - `validation.csv` (long: month × dimension → score; the health-score trend)
+  - `risk.csv` (long: month × qi → uniqueness, k, suppressed; before/after uniqueness)
+  - `detection.csv` (per-entity precision/recall/f1/tp/fp/fn + overall)
+  - `triage.csv` (timestamp, request_id, verdict, profile, pii_redacted_in_draft)
+  - `requests.csv` (turnaround: request_id joined across triage → approve → export)
+  Each CSV documents its provenance; headline metrics trace to ledger fields.
+- **`figures.py`** — matplotlib (Agg) PNGs to `outputs/figures/` (committed): uniqueness ladder
+  before/after, detection precision/recall per entity, health-score + suppression month trends,
+  equivalence-class size distribution (computed from a month via DuckDB).
+
+Settings: `dashboard_dir`, `figures_dir`. Deps: `uv add matplotlib`.
+CLI: **`ridecloak dashboard-extract`** (CSVs) and **`ridecloak figures`** (PNGs); both append a
+ledger entry (D-0010).
+
+Human (Shane): build + publish the Tableau Public dashboard from the CSVs. **Claude Code does not
+attempt Tableau; do not substitute React** (the dashboard is the JD's BI-tooling signal — see
+the presentation discussion: Tableau covers the BI keyword, while the article + a Remotion video
++ the README carry the scope).
+
+Tests (`test_dashboard.py`): builders produce the expected tidy columns/values from a small
+synthetic ledger fixture; `suppression_rate` and the turnaround join are correct; an export row's
+suppression matches its ledger entry (traceability); a figure smoke test renders a PNG.
+
+**Accept when:** CSVs load into Tableau without manual cleaning; every dashboard metric traces to
+a ledger field; the 4-month trends are populated; figures render.
+**Decided (D-0012):** 4 months (2026-01..04); figures bundled in.
 
 ### ☐ Phase 8 — Ship  (est. 2–3 days, mostly human)
 README (recruiter intro, honest-scope statement, reproduce instructions), `reproduce.ps1/.sh`

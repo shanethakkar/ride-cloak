@@ -92,6 +92,14 @@ class Settings(BaseSettings):
         return self.outputs_dir / "reports"
 
     @property
+    def dashboard_dir(self) -> Path:
+        return self.outputs_dir / "dashboard"
+
+    @property
+    def figures_dir(self) -> Path:
+        return self.outputs_dir / "figures"
+
+    @property
     def exports_dir(self) -> Path:
         return self.outputs_dir / "exports"
 

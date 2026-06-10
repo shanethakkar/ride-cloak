@@ -696,5 +696,48 @@ def approve(request_id: str, note: str) -> None:
     )
 
 
+@main.command(name="dashboard-extract")
+def dashboard_extract() -> None:
+    """Emit tidy CSVs from the ledger + reports for the Tableau dashboard."""
+    from pipeline.dashboard import extract
+
+    settings = get_settings()
+    manifest = extract.extract_all(settings)
+    table = Table(title="Dashboard extracts")
+    table.add_column("table")
+    table.add_column("rows", justify="right")
+    table.add_column("path")
+    total = 0
+    for name, (path, rows) in manifest.items():
+        total += rows
+        table.add_row(name, str(rows), str(path.relative_to(settings.project_root)))
+    console.print(table)
+    _append_ledger(
+        settings,
+        "dashboard-extract",
+        {
+            "input_hash": None,
+            "output_hash": None,
+            "metrics": {"tables": len(manifest), "rows": total},
+        },
+    )
+
+
+@main.command()
+def figures() -> None:
+    """Render matplotlib figures (uniqueness, detection, month trends) to outputs/figures/."""
+    from pipeline.dashboard import figures as fig
+
+    settings = get_settings()
+    rendered = fig.render_all(settings)
+    for name, path in rendered.items():
+        console.print(f"{name} -> {path.relative_to(settings.project_root)}")
+    _append_ledger(
+        settings,
+        "figures",
+        {"input_hash": None, "output_hash": None, "metrics": {"figures": len(rendered)}},
+    )
+
+
 if __name__ == "__main__":
     main()

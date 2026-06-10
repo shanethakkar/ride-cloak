@@ -63,7 +63,7 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   | TLC profile time bucket | 15 min | **Resolved D-0009** |
   | MDS profile time bucket | 60 min | **Resolved D-0009** (borough geography) |
   | First data month | most recent available (TLC ~2-month publish delay → ~2026-03/04, verify at Phase 0) | Phase 0 |
-  | Additional months beyond the first | none yet | post-Phase 0 |
+  | Additional months beyond the first | 2026-01 .. 2026-04 | **Resolved D-0012** (Phase 7 trends) |
 - **How to close:** When a phase consumes one of these, confirm the value with Shane, then add
   a new `Accepted` decision entry recording the final value and the data that justified it.
 
@@ -100,6 +100,23 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
 - **Alternatives:** strict hard-fail (rejected — fails real data, needs a quarantine step);
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
+
+## D-0012 — Phase 7 dashboard extracts: multi-month + bundled figures
+- **Date:** 2026-06-09
+- **Status:** Accepted (closes the D-0003 "additional months" row)
+- **Decisions:**
+  1. **Ingest 4 months — 2026-01 .. 2026-04** — and run the scale-path stages
+     (`validate`/`risk`/`export --profile mds`) on `--input month` for each, so the dashboard
+     shows real *trends* and the headline "N million Uber trips across M months" is true. Row-level
+     TLC/LE exports stay on 2026-04 (the synthetic identity layer lives only there).
+  2. **Bundle figure generation into Phase 7** — a `ridecloak figures` step emits committed
+     matplotlib PNGs (uniqueness before/after, detection precision/recall, month trends,
+     equivalence-class distribution) from the same extracts, ready for the article + the video.
+- **Why:** trends and a real "M months" number are what convey the scope to recruiters; the
+  figures share the dashboard's data and the video (next) needs them, so building them now is
+  efficient. (`uv add matplotlib`.)
+- **Ledger note:** the multi-month scale commands append to the existing append-only ledger
+  (chain stays valid); the dashboard reads the accumulated trail.
 
 ## D-0011 — Phase 6 AI triage agent with guardrails
 - **Date:** 2026-06-09

@@ -105,6 +105,7 @@ ridecloak triage --request "<text>"
 ridecloak approve --request-id <id>      # human-only
 ridecloak verify-ledger
 ridecloak dashboard-extract
+ridecloak figures
 ```
 Every command: Rich console summary, a JSON artifact under `outputs/`, and a ledger entry.
 
@@ -122,8 +123,10 @@ accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first
   P5: hash-chained attestation ledger (`verify-ledger`; tamper caught at exact seq; report
   regenerates byte-identical). P6: AI triage agent — Sonnet 4.6 extracts (untrusted), deterministic
   guardrails decide and fail closed, no import path to the runner (grep-enforced); injection →
-  REFUSE, in-policy → ALLOW; triage chained in the ledger. 102 tests pass, ruff green.
-- **Next step:** Phase 7 — `ridecloak dashboard-extract` (tidy CSVs from the ledger + reports for
-  the human-built Tableau dashboard; Claude Code does not attempt Tableau). See [docs/plan.md](docs/plan.md).
+  REFUSE, in-policy → ALLOW; triage chained in the ledger. P7: multi-month (2026-01..04, ~61M
+  Uber trips) dashboard extracts (`dashboard-extract` → 8 tidy CSVs) + `figures` (matplotlib PNGs:
+  uniqueness ladder, detection P/R, month trends); ledger 25 entries intact. 109 tests pass.
+- **Next steps:** explainer video (Remotion, from the figures); Phase 8 ship (README, reproduce
+  script, article, repo public). Human: Tableau from `outputs/dashboard/*.csv`, article.
 - **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.
   Phase 6 triage needs `RIDECLOAK_ANTHROPIC_API_KEY` in `.env`.

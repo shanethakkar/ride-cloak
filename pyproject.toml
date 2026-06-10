@@ -24,6 +24,7 @@ dependencies = [
     "presidio-analyzer>=2.2.362",
     "spacy>=3.8.14",
     "anthropic>=0.109.1",
+    "matplotlib>=3.10.9",
 ]
 
 [project.scripts]
