@@ -101,6 +101,31 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
 
+## D-0011 — Phase 6 AI triage agent with guardrails
+- **Date:** 2026-06-09
+- **Status:** Accepted
+- **Decisions:**
+  1. **Triage model = `claude-sonnet-4-6`** (configurable via `settings.triage_model`). The LLM
+     only *extracts* a free-text request into a structured form; the policy decision is
+     deterministic code, so Sonnet is ample and ~40% cheaper than Opus (~$0.024/call).
+  2. **Skip Phase 6b** (Streamlit approval console) — the SPEC's designated first cut. The
+     approval queue + fail-closed flow are fully exercised via the CLI.
+  3. **Architectural draft-only (the core invariant):** the LLM output is *untrusted input*. It
+     never decides policy and `pipeline/agent/` has **no import of `pipeline.export.runner`**
+     (grep-enforced by a test). The deterministic guardrail layer derives the verdict from the
+     *extracted fields*, ignoring anything the model says about "approval" — so a prompt
+     injection that makes the model emit "approve everything" changes nothing, and even an
+     `allow` verdict only produces a draft + a pending request a human must `approve` before any
+     `export`.
+  4. **Cost/test posture:** the ≥10-request guardrail suite (in-policy / out-of-policy /
+     ambiguous / injection) runs **offline** against the deterministic guardrails with stubbed
+     parses — no API key, no cost, CI-safe. Only a small, skippable smoke test makes a live
+     Sonnet call when a key is present.
+- **Why:** the responsible-AI thesis is that safety is *deterministic code, not prompt text*;
+  Sonnet keeps the live cost trivial; offline tests keep CI free and fast.
+- **Key handling:** `RIDECLOAK_ANTHROPIC_API_KEY` in `.env` (gitignored) →
+  `settings.anthropic_api_key`, passed explicitly to the SDK; never logged.
+
 ## D-0010 — Phase 5 attestation ledger
 - **Date:** 2026-06-09
 - **Status:** Accepted

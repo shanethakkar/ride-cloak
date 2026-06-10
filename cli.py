@@ -616,6 +616,66 @@ def verify_ledger() -> None:
 
 
 @main.command()
+@click.option("--request", "request_text", required=True, help="Free-text regulator data request.")
+def triage(request_text: str) -> None:
+    """Parse a free-text request, apply deterministic guardrails, and queue a draft.
+
+    The LLM only extracts; the verdict is decided by code and fails closed. This
+    command never exports data — it writes a pending recommendation for a human.
+    """
+    from pipeline.agent import approval, guardrails
+    from pipeline.agent import triage as triage_mod
+
+    settings = get_settings()
+    if not settings.anthropic_api_key:
+        raise click.UsageError("Set RIDECLOAK_ANTHROPIC_API_KEY in .env to use triage.")
+
+    console.print("[bold]Parsing request with the triage model[/bold] ...")
+    parsed, hashes = triage_mod.parse_request(request_text, settings)
+    decision = guardrails.evaluate(parsed)
+    draft = guardrails.build_draft(parsed, decision)
+    console.print("[bold]Re-scanning the draft for residual PII[/bold] ...")
+    draft_safe, redacted = guardrails.output_rescan(draft)
+
+    request_id = approval.new_request_id()
+    approval.queue_triage(settings, request_id, parsed, decision, draft_safe)
+    _append_ledger(
+        settings,
+        "triage",
+        {
+            "input_hash": hashes["prompt_sha"],
+            "output_hash": hashes["response_sha"],
+            "metrics": {
+                "verdict": decision.verdict.value,
+                "profile": decision.profile,
+                "request_id": request_id,
+                "pii_redacted_in_draft": redacted,
+            },
+        },
+    )
+    _print_triage_summary(decision, request_id, draft_safe)
+
+
+def _print_triage_summary(decision, request_id: str, draft: str) -> None:
+    colors = {"allow": "green", "refuse": "red", "escalate": "yellow"}
+    verdict = decision.verdict.value
+    table = Table(title=f"Triage — {request_id}")
+    table.add_column("field")
+    table.add_column("value")
+    table.add_row("verdict", f"[{colors[verdict]}]{verdict.upper()}[/{colors[verdict]}]")
+    table.add_row("profile", str(decision.profile))
+    table.add_row("fields allowed", ", ".join(decision.fields_allowed) or "(none)")
+    table.add_row("fields refused", ", ".join(decision.fields_refused) or "(none)")
+    console.print(table)
+    for r in decision.reasons:
+        console.print(f"  - {r}")
+    console.print(
+        f"\n[dim]Draft only. To release LE data a human must run "
+        f"`ridecloak approve --request-id {request_id}` then `ridecloak export`.[/dim]"
+    )
+
+
+@main.command()
 @click.option("--request-id", required=True, help="Identifier of the request being approved.")
 @click.option("--note", default="", help="Optional approval note.")
 def approve(request_id: str, note: str) -> None:

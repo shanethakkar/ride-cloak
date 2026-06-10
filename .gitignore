@@ -16,6 +16,9 @@ outputs/exports/*
 data/synth/*
 !data/synth/.gitkeep
 
+# Triage records may echo regulator request text (potential PII); not committed.
+outputs/triage/
+
 # Python / uv / tooling
 .venv/
 __pycache__/

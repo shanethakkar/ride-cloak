@@ -56,8 +56,10 @@ class Settings(BaseSettings):
     # default so a local username never lands in the committed/public ledger.
     operator: str = "ridecloak-pipeline"
 
-    # Phase 6 only. Never logged.
+    # Phase 6 triage agent. The LLM only extracts; the policy decision is
+    # deterministic (decisions.md D-0011). Key is never logged.
     anthropic_api_key: str | None = None
+    triage_model: str = "claude-sonnet-4-6"
 
     # --- Canonical paths (derived from PROJECT_ROOT) -------------------------
 
@@ -96,6 +98,10 @@ class Settings(BaseSettings):
     @property
     def approvals_dir(self) -> Path:
         return self.outputs_dir / "approvals"
+
+    @property
+    def triage_dir(self) -> Path:
+        return self.outputs_dir / "triage"
 
     @property
     def salts_dir(self) -> Path:

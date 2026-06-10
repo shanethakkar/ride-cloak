@@ -115,14 +115,15 @@ Python 3.12 via **uv** (`uv init`, `uv add`, commit `uv.lock`). Presidio needs a
 accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first.
 
 ## Current State
-- **Phases 0–5 complete (2026-06-09).** P0: scaffold/ingest/synth/dev slice. P1: two-tier
+- **Phases 0–6 complete (2026-06-09).** P0: scaffold/ingest/synth/dev slice. P1: two-tier
   validation gate. P2: classification + Presidio detection (precision 0.997, recall 0.998).
   P3: transform engine + `ridecloak risk` (full-month uniqueness 90.1%→0.06% zone→borough).
   P4: export profiles (declarative YAML, fail-closed runner; MDS month retains 99.95% in ~2s).
-  P5: hash-chained attestation ledger — every command appends; `verify-ledger` walks the chain
-  (8-entry run verified; tamper caught at exact seq; methodology report regenerates byte-identical).
-  82 tests pass, ruff green.
-- **Next step:** Phase 6 — AI triage agent with guardrails (needs `ANTHROPIC_API_KEY`):
-  draft-only, fail-closed, no code path to `runner.py` (grep-enforced), prompts/responses hashed
-  to the ledger. See [docs/plan.md](docs/plan.md).
+  P5: hash-chained attestation ledger (`verify-ledger`; tamper caught at exact seq; report
+  regenerates byte-identical). P6: AI triage agent — Sonnet 4.6 extracts (untrusted), deterministic
+  guardrails decide and fail closed, no import path to the runner (grep-enforced); injection →
+  REFUSE, in-policy → ALLOW; triage chained in the ledger. 102 tests pass, ruff green.
+- **Next step:** Phase 7 — `ridecloak dashboard-extract` (tidy CSVs from the ledger + reports for
+  the human-built Tableau dashboard; Claude Code does not attempt Tableau). See [docs/plan.md](docs/plan.md).
 - **Setup:** Presidio needs the spaCy model: `uv run python -m spacy download en_core_web_lg`.
+  Phase 6 triage needs `RIDECLOAK_ANTHROPIC_API_KEY` in `.env`.
