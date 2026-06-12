@@ -94,6 +94,19 @@ address, and it kept tagging street names as people. Diagnosing that, and closin
 custom recognizers, is the difference between "I used a PII tool" and "I measured it and fixed
 what it got wrong."
 
+But there's an honest asterisk on that 99.7/99.8, and I'd rather put it in the article than have
+someone find it for me. Those numbers are *in-distribution*: I tuned the recognizers against the
+same note formats I then scored them on. So I built a second test set that deliberately uses
+formats the recognizers had never seen — phone numbers written with slashes, card numbers masked
+with bullets, neighborhood names instead of street addresses — and ran the *unchanged* detectors
+on it. Recall fell from 0.998 to 0.34. The interesting part is *which* pieces failed: the
+components I didn't hand-write — Presidio's email detector, spaCy's name recognizer — held up
+fine, while every regex I tuned by hand fell off a cliff on formats it wasn't written for.
+Precision stayed high, so the failure mode is silence, missed PII, rather than false alarms.
+That's the real lesson, and it's not the headline number: hand-tuned pattern matching is brittle
+in exactly the way learned models aren't, and the responsible move is to report that rather than
+quietly re-tune until the second test looks as good as the first.
+
 **Transforming.** This is where the privacy actually happens: dropping fields, replacing
 identifiers with salted hashes, rounding timestamps, rolling zones up to boroughs, and applying
 k-anonymity. The salts rotate on every export and are referenced in the audit log only by

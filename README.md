@@ -41,12 +41,12 @@ of individuals in mobility traces.)
 |---|---|
 | **Scale** | ~61M Uber trips across 4 months (2026-01..04), queried in DuckDB without loading into pandas |
 | **Validation** | Two-tier gate, 0-100 health score; clean data scores 99.99, a corrupted slice scores 78.83 and is refused |
-| **PII detection** | precision **0.997**, recall **0.998** across 8 entity types, measured against a synthetic answer key |
+| **PII detection** | **in-distribution** precision **0.997**, recall **0.998** across 8 entity types vs a synthetic answer key; on a held-out **unseen-format** split, recall falls to **0.338** (precision 0.948) — the NER/built-in components generalize, the hand-tuned regexes overfit. Reported honestly, not re-tuned. |
 | **Re-identification** | 90.1% unique (zone × minute) → **0.06%** (borough × 15-min); documented before/after |
 | **Export profiles** | 3 declarative YAML policies; a new regulator is **1 file, 0 code**; a borough aggregate keeps 99.95% of a full month in ~2s |
 | **Responsible AI** | triage agent is **draft-only**, fails closed, and has no code path to the exporter (enforced by a test); a prompt injection is refused |
 | **Audit** | hash-chained ledger; `verify-ledger` pinpoints any tampering; the methodology report regenerates byte-identically |
-| **Quality** | 109 tests, `ruff` clean |
+| **Quality** | 114 tests, `ruff` clean |
 
 ## How it works
 
@@ -60,7 +60,8 @@ ingest → validate → classify → transform → export → attest
 - **validate** — a Pandera contract (hard) plus an equally weighted 0-100 health score across
   completeness / validity / consistency / uniqueness (soft); a gate refuses export below 90.
 - **classify** — tier every column; scan the free-text notes with Microsoft Presidio plus custom
-  recognizers (TLC license, NY plate, VIN); grade precision/recall against the synthetic labels.
+  recognizers (TLC license, NY plate, VIN); grade precision/recall against the synthetic labels,
+  both in-distribution and on a held-out unseen-format split (see [docs/limitations.md](docs/limitations.md) L-03).
 - **transform** — suppression, salted-SHA-256 pseudonymization (per-export salt, referenced in
   the ledger by fingerprint), temporal rounding, zone→borough rollup, and k-anonymity.
 - **export** — a declarative policy compiles to an ordered transform plan; the runner fails

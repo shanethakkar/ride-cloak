@@ -117,7 +117,9 @@ accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first
 
 ## Current State
 - **Phases 0–6 complete (2026-06-09).** P0: scaffold/ingest/synth/dev slice. P1: two-tier
-  validation gate. P2: classification + Presidio detection (precision 0.997, recall 0.998).
+  validation gate. P2: classification + Presidio detection (in-distribution precision 0.997,
+  recall 0.998; held-out unseen-format split recall 0.338 / precision 0.948 — NER+built-ins
+  generalize, custom regexes overfit; reported, not re-tuned; see findings/phase-2.md).
   P3: transform engine + `ridecloak risk` (full-month uniqueness 90.1%→0.06% zone→borough).
   P4: export profiles (declarative YAML, fail-closed runner; MDS month retains 99.95% in ~2s).
   P5: hash-chained attestation ledger (`verify-ledger`; tamper caught at exact seq; report
@@ -127,7 +129,7 @@ accuracy suffers). Approved stack only (SPEC §4); anything else, escalate first
   Uber trips) dashboard extracts (`dashboard-extract` → 8 tidy CSVs) + `figures` (matplotlib PNGs:
   uniqueness ladder, detection P/R, month trends). P8 (ship): `scripts/reproduce.{sh,ps1}` (verified
   end to end, ledger 26 entries intact), full `README.md`, first-draft article
-  (`docs/article-draft.md`). 109 tests pass, ruff green. **All agent-side work (Phases 0–8) done.**
+  (`docs/article-draft.md`). 114 tests pass, ruff green. **All agent-side work (Phases 0–8) done.**
 - **Remaining (human):** publish the article, build the Tableau dashboard from
   `outputs/dashboard/*.csv`, make the repo public. The explainer video was cut (article + repo +
   dashboard carry the scope).

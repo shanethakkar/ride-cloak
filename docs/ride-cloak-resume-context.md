@@ -56,8 +56,9 @@ is architecturally incapable of releasing data on its own.
 | Monthly file size / rows | ~500 MB and ~20M rows each, queried via DuckDB without loading into pandas |
 | Full-month validation speed | **~5.5s** over 15.4M Uber rows (single-pass DuckDB aggregation) |
 | Data health score (clean vs corrupted) | **99.99** (clean) vs **78.83** (corrupted slice, refused by the gate) |
-| PII detection (synthetic ground truth) | **precision 0.997, recall 0.998** across 8 entity types; every entity ≥0.986 |
-| Labeled PII spans evaluated | **7,826** spans, synthetic ground truth |
+| PII detection — in-distribution (synthetic ground truth) | **precision 0.997, recall 0.998** across 8 entity types; every entity ≥0.986 |
+| PII detection — held-out unseen formats | **precision 0.948, recall 0.338**: NER/built-in components generalize (EMAIL 1.0/1.0, PERSON 0.91/0.98), hand-tuned regexes overfit. Reported, not re-tuned. |
+| Labeled PII spans evaluated | **7,826** in-distribution + 4,000 held-out-format notes, synthetic ground truth |
 | Re-identification uniqueness (full month) | **90.1%** (zone × minute) → **0.06%** (borough × 15-min) |
 | k-anonymity (k=5) suppression | **~85%** of rows at zone level vs **0.26%** at borough level |
 | Full-month re-identification analysis speed | **~4.3s** (DuckDB, no pandas load) |
@@ -114,13 +115,20 @@ Each phase: what was built, the tools, and the measurable outcome.
   disability/accessibility flags classified sensitive (GDPR special-category-adjacent).
 - **Presidio** over free text + **6 custom recognizers** (TLC license, NY plate, VIN, masked
   card, US phone, no-suffix street address) + an overlap-deconfliction pass.
-- **Measured against synthetic ground truth:** overall **precision 0.997, recall 0.998** across
-  8 entity types (7,826 spans).
+- **Measured against synthetic ground truth (in-distribution):** overall **precision 0.997,
+  recall 0.998** across 8 entity types (7,826 spans).
 - Real engineering: baseline was precision 0.85 / recall 0.63; diagnosed the failures (Presidio
   missed the phone formats, tagged street names as people, and a default IGNORECASE flag matched
   lowercase tokens) and closed the gap to 0.997/0.998.
-- *Outcome:* upgraded "used a PII tool" to "measured detection and closed the gap with custom
-  recognizers." (Numbers are on the synthetic labeled set, not a guarantee on unseen data.)
+- **Held-out unseen-format check (the honest part):** scored the *unmodified* recognizers on
+  4,000 notes using PII formats they were never built for. Overall recall falls to **0.338**
+  (precision 0.948). The split is clean: the components I did **not** hand-build generalize
+  (Presidio built-in EMAIL 1.0/1.0, spaCy NER PERSON 0.91/0.98), while every custom regex
+  overfits its target format. Precision stays high — the failure mode is missed PII, not false
+  alarms. Reported, **not** re-tuned (re-tuning to the held-out set would just move the leakage).
+- *Outcome:* upgraded "used a PII tool" to "measured detection in- *and* out-of-distribution,
+  closed the in-dist gap with custom recognizers, and named exactly where they stop
+  generalizing." (All numbers are on synthetic labeled sets, not a guarantee on real data.)
 
 ### Phase 3 — Transform engine + re-identification risk (the headline finding)
 - Built pure transforms: suppression, **salted SHA-256 pseudonymization** (per-export salt,
@@ -203,8 +211,11 @@ Each phase: what was built, the tools, and the measurable outcome.
 - Reduced trip **re-identification uniqueness from 90.1% to 0.06%** via spatial generalization +
   k-anonymity, and showed zone-level k-anonymity was infeasible (~85% suppression) while a borough
   rollup cost **0.26%**.
-- Measured **PII detection at 99.7% precision / 99.8% recall** across 8 entity types against a
-  synthetic ground-truth layer, extending Presidio with custom recognizers.
+- Measured **PII detection at 99.7% precision / 99.8% recall in-distribution** across 8 entity
+  types against a synthetic ground-truth layer, extending Presidio with custom recognizers — then
+  ran a **held-out unseen-format** check that exposed where it stops generalizing (recall 0.338;
+  the NER/built-in components hold, the hand-tuned regexes overfit) and reported it rather than
+  re-tuning to the test.
 - Built a **two-tier validation gate** (0–100 health score) that refuses export below threshold;
   validated a full 15.4M-row month in **~5.5s**.
 - Implemented a **hash-chained audit ledger** capturing 100% of pipeline actions with exact-point
@@ -219,8 +230,9 @@ Each phase: what was built, the tools, and the measurable outcome.
 - **No real rider PII was handled.** The identity layer is synthetic; the public HVFHV data is
   already anonymized. Correct framing: "reconstructed the pre-anonymization input to demonstrate
   the transform." Never imply real rider data was processed.
-- Detection precision/recall are measured on the **synthetic labeled set**, a measured floor
-  there, not a guarantee on unseen production text.
+- Detection precision/recall are measured on **synthetic labeled sets**. The headline 0.997/0.998
+  is **in-distribution** (recognizers tuned on the same formats); a held-out unseen-format split
+  drops recall to 0.338. Neither is a guarantee on unseen production text.
 - k-anonymity is risk reduction, not a solution; pseudonymization is not anonymization.
 - This is a **demonstration of the privacy/validation/audit core**, not production delivery
   infrastructure (no real SFTP, auth, or key management).
@@ -235,8 +247,11 @@ caveat in mind (don't claim real PII handling).
 - *Privacy result:* cut trip re-identification uniqueness from 90% to under 0.1% via spatial
   generalization, k-anonymity, salted pseudonymization, and temporal rounding, with a measured
   before/after metric.
-- *PII measurement:* measured PII detection at 99.7% precision / 99.8% recall against a synthetic
-  ground-truth layer by extending Microsoft Presidio with custom license/plate/VIN recognizers.
+- *PII measurement:* measured PII detection at 99.7% precision / 99.8% recall in-distribution
+  against a synthetic ground-truth layer by extending Microsoft Presidio with custom
+  license/plate/VIN recognizers, then ran a held-out unseen-format evaluation that pinpointed
+  where the hand-tuned recognizers stop generalizing (and reported it rather than overfitting the
+  test).
 - *Audit/compliance:* built a hash-chained audit ledger recording every transformation with exact
   tamper detection and auto-generated, byte-reproducible methodology reports.
 - *Responsible AI:* deployed a Claude triage agent under deterministic guardrails (draft-only,

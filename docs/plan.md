@@ -97,7 +97,9 @@ Findings: [findings/phase-1.md](findings/phase-1.md).
 
 ### ☑ Phase 2 — Classification & PII detection  (done 2026-06-09)
 
-**Result: overall precision 0.997, recall 0.998 (targets 0.90/0.95 met). 51 tests pass.**
+**Result: in-distribution precision 0.997, recall 0.998 (targets 0.90/0.95 met). Held-out
+unseen-format split (added 2026-06-12): recall 0.338 / precision 0.948 — NER + built-ins
+generalize, hand-tuned regexes overfit; reported, not re-tuned.**
 Findings: [findings/phase-2.md](findings/phase-2.md). Design below (decisions D-0007).
 
 Deps to add: `presidio-analyzer`, `spacy`; download `en_core_web_lg` (~560MB,

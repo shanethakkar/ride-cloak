@@ -54,10 +54,20 @@ the measured bound.
   acceptance bar (recall ≥ 0.95, precision ≥ 0.90 on labeled spans) is a measured floor on the
   test set, **not** a guarantee on unseen data. The residual-risk caveat is stated wherever the
   numbers appear.
-- **Measured bound (Phase 2, dev slice, 7,826 labeled spans across 8 entity types):** overall
-  precision 0.997, recall 0.998, F1 0.998; per-entity recall >= 0.994 and precision >= 0.986.
-  These hold on the *synthetic labeled set* and are a measured floor there, not a guarantee on
-  unseen production text. See [findings/phase-2.md](findings/phase-2.md).
+- **Measured bound — in-distribution (Phase 2, dev slice, 7,826 labeled spans across 8 entity
+  types):** overall precision 0.997, recall 0.998, F1 0.998; per-entity recall >= 0.994 and
+  precision >= 0.986. **These are in-distribution numbers** — the recognizers were tuned on the
+  same synthetic note formats they are scored against, so this measures fit, not generalization.
+- **Measured bound — held-out unseen formats (added 2026-06-12):** scored on 4,000 notes whose
+  PII uses formats the recognizers were *not* built for (a format split, not a row split; a unit
+  test confirms the values do not match the recognizer regexes), the **unmodified** recognizers
+  fall to **overall precision 0.948, recall 0.338**. The drop is not uniform, and that is the
+  point: the components not hand-built generalize (Presidio built-in EMAIL 1.00/1.00; spaCy NER
+  PERSON 0.91/0.98), while every custom regex/context recognizer overfits its target format
+  (PHONE, CREDIT_CARD, NY_PLATE, VEHICLE_VIN, TLC_LICENSE collapse to ~0 recall; LOCATION holds
+  0.32). **Precision stays high (0.95): the failure mode is missed PII, not false alarms.** This
+  is synthetic-to-synthetic — robustness across format variation we imagined, **not** a
+  real-world generalization claim. See [findings/phase-2.md](findings/phase-2.md).
 
 ## L-04 — This is a demo, not production data-sharing infrastructure
 - **Limitation:** RideCloak demonstrates the data-transformation and audit core. It does **not**

@@ -101,6 +101,30 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
 
+## D-0013 — Phase 2 PII metrics reported in- *and* out-of-distribution; not re-tuned
+- **Date:** 2026-06-12
+- **Status:** Accepted
+- **Context:** A reviewer noted the headline 0.997/0.998 is in-distribution — the recognizers
+  were tuned against the same synthetic note formats they are scored on, so the number measures
+  fit, not generalization.
+- **Decision:** Build a **format-split** held-out evaluation (`pipeline/classify/heldout.py`):
+  notes whose PII uses formats the recognizers were never built for, with a unit test asserting
+  the held-out values do not match the recognizer regexes (a real format split, not a row split).
+  Score the **unmodified** recognizers on it and **report both numbers**, leading with the split
+  between generalizing components (Presidio built-in EMAIL, spaCy NER PERSON) and the overfit
+  hand-tuned regexes. **Do not re-tune** the recognizers to recover the held-out recall.
+- **Result:** held-out overall precision 0.948, recall 0.338 (vs in-dist 0.997/0.998). EMAIL
+  1.0/1.0 and PERSON 0.91/0.98 hold; PHONE/CREDIT_CARD/NY_PLATE/VEHICLE_VIN/TLC_LICENSE collapse
+  to ~0 recall; LOCATION 0.32. Precision stays high — the failure mode is missed PII, not false
+  alarms. Synthetic-to-synthetic; not a real-world generalization claim.
+- **Why not re-tune:** broadening the regexes to the held-out shapes and re-scoring the same set
+  just moves the leakage up a level (fitting the held-out formats). The honest finding is
+  architectural — learned/statistical components degrade gracefully under format drift, brittle
+  hand-tuned regexes do not — and is more valuable reported than optimized away.
+- **Affects:** [findings/phase-2.md](findings/phase-2.md) (method + both tables),
+  [limitations.md](limitations.md) L-03, README, resume-context, article-draft. The Phase-2
+  recognizers and `evaluate.py` are unchanged.
+
 ## D-0012 — Phase 7 dashboard extracts: multi-month + bundled figures
 - **Date:** 2026-06-09
 - **Status:** Accepted (closes the D-0003 "additional months" row)
