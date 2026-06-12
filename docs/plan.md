@@ -16,7 +16,11 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
 - **Last completed:** **Phase 8** (2026-06-09, agent side) — ship. `scripts/reproduce.{sh,ps1}`
   run the whole pipeline and regenerate every committed artifact (verified end to end; ledger 26
   entries intact). Full recruiter-facing `README.md` and a first-draft article
-  (`docs/article-draft.md`). `pytest` (109 passed), ruff green. See [findings/phase-8.md](findings/phase-8.md).
+  (`docs/article-draft.md`). See [findings/phase-8.md](findings/phase-8.md).
+- **Most recent change (2026-06-12):** Phase 2 held-out unseen-format PII evaluation added in
+  response to a reviewer (D-0013) — the 0.997/0.998 detection numbers are now labeled
+  **in-distribution**, with a held-out figure (recall 0.338 / precision 0.948) reported alongside.
+  Recognizers unchanged. `pytest` (114 passed), ruff green.
 - **Phases completed:** 0–8 (all agent-side work done).
 - **Remaining (human, SPEC §13):** build + publish the **Tableau Public dashboard** from
   `outputs/dashboard/*.csv`; edit + publish the **article** (`docs/article-draft.md`) on

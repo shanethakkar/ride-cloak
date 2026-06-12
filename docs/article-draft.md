@@ -87,7 +87,10 @@ detection is. Because I generated the synthetic data, I know exactly where every
 is, so I can grade myself. The result is 99.7% precision and 99.8% recall across eight kinds of
 identifier.
 
-![Detection precision and recall by entity](../outputs/figures/detection.png)
+![In-distribution detection precision and recall by entity](../outputs/figures/detection.png)
+
+*In-distribution, by entity type. The held-out unseen-format results discussed next are not in
+this chart yet — if I keep one figure, it should show both side by side.*
 
 Getting there wasn't automatic. My first pass missed every phone number and almost every
 address, and it kept tagging street names as people. Diagnosing that, and closing the gap with
