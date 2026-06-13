@@ -17,15 +17,28 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
   run the whole pipeline and regenerate every committed artifact (verified end to end; ledger 26
   entries intact). Full recruiter-facing `README.md` and a first-draft article
   (`docs/article-draft.md`). See [findings/phase-8.md](findings/phase-8.md).
-- **Most recent change (2026-06-12):** Phase 2 held-out unseen-format PII evaluation added in
+- **Most recent change (2026-06-12):** article written + shipped into the portfolio site (separate
+  `website` repo). Rewrote `docs/article-draft.md` for a cleaner, more accessible voice and ran an
+  editor pass — reorganized by idea (after the uniqueness finding, the back half is three "can you
+  trust it?" stress tests: detection, the AI agent, the ledger), title → "I Built the Missing Piece
+  of the Uber Surveillance Fight", synthetic-data note pulled into a callout. Ported to
+  `website/content/articles/ridecloak.mdx` (slug `ridecloak`, category `PRIVACY · REGULATED DATA ·
+  DUCKDB`, tags `python · duckdb · nlp · k-anonymity · llm-agents`) with **three native interactive
+  components** driven by `outputs/dashboard/*.csv` (uniqueness ladder w/ dev↔month toggle; PII
+  detection scoreboard w/ in-dist↔held-out toggle; 4-month compliance dashboard). Homepage card +
+  mini-chart added; `npx next build` green, TypeScript + ESLint clean. **No pipeline/code change in
+  this repo** — only the article draft was touched here.
+- **Earlier on 2026-06-12:** Phase 2 held-out unseen-format PII evaluation added in
   response to a reviewer (D-0013) — the 0.997/0.998 detection numbers are now labeled
   **in-distribution**, with a held-out figure (recall 0.338 / precision 0.948) reported alongside.
   Recognizers unchanged. `pytest` (114 passed), ruff green.
 - **Phases completed:** 0–8 (all agent-side work done).
-- **Remaining (human, SPEC §13):** build + publish the **Tableau Public dashboard** from
-  `outputs/dashboard/*.csv`; edit + publish the **article** (`docs/article-draft.md`) on
-  shanethakkar.com; make the **repo public**. The explainer video was considered and **cut** (the
-  article + repo + dashboard carry the scope for a DS portfolio).
+- **Remaining (human, SPEC §13):** make the **repo public** (then add the `repo:` "Source" pill to
+  the article frontmatter); **deploy** the website (the article is built + committed-ready in the
+  `website` repo, build green — just needs a Vercel deploy). The native in-article compliance
+  dashboard now covers the metrics-over-time story; a standalone **Tableau Public** build is
+  optional. The explainer video was considered and **cut** (article + repo + dashboard carry the
+  scope for a DS portfolio).
 - **Open escalations:** [decisions.md](decisions.md) D-0003 (k → Phase 3, buckets → Phase 4,
   extra months → Shane). Month locked: 2026-04 (D-0004).
 - **Naming note:** CLI is `ridecloak` ([decisions.md](decisions.md) D-0001). SPEC examples that
