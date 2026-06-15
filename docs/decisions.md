@@ -113,9 +113,11 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
 - **Why:** Shane's request — the repo is a public, recruiter-facing portfolio piece and must never
   read as anti-Uber. The privacy-defender framing is also historically accurate: in that dispute
   the operators argued *for* rider privacy.
-- **Affects:** `README.md` "Why this exists". The live article (`/articles/ridecloak`) still uses
-  the title "I Built the Missing Piece of the Uber Surveillance Fight" and the same narrative —
-  flagged to Shane; any change there pending his call so the two stay consistent.
+- **Affects:** `README.md` "Why this exists" and the live article (`/articles/ridecloak`), which
+  got the same treatment: title changed to "I Built the Missing Piece of the Ride-Hail Data Fight"
+  and the opening reframed — Uber presented as the privacy advocate, the "lost its appeal and
+  complied" framing dropped, "dumping vehicles in poor neighborhoods" softened. Homepage card +
+  `CONTEXT.md` title updated to match.
 - **Alternatives:** Drop the Uber/MDS reference entirely (rejected — it is the genuine motivation
   and anchors the article; neutral framing reaches the goal without losing the hook).
 

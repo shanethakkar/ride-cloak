@@ -21,7 +21,8 @@ and tick any acceptance criteria met. When a phase completes, mark it done, link
   `website` repo). Rewrote `docs/article-draft.md` for a cleaner, more accessible voice and ran an
   editor pass — reorganized by idea (after the uniqueness finding, the back half is three "can you
   trust it?" stress tests: detection, the AI agent, the ledger), title → "I Built the Missing Piece
-  of the Uber Surveillance Fight", synthetic-data note pulled into a callout. Ported to
+  of the Ride-Hail Data Fight" (reworded 2026-06-15 from "...Uber Surveillance Fight" to avoid
+  anti-Uber framing, D-0014), synthetic-data note pulled into a callout. Ported to
   `website/content/articles/ridecloak.mdx` (slug `ridecloak`, category `PRIVACY · REGULATED DATA ·
   DUCKDB`, tags `python · duckdb · nlp · k-anonymity · llm-agents`) with **three native interactive
   components** driven by `outputs/dashboard/*.csv` (uniqueness ladder w/ dev↔month toggle; PII

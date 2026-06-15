@@ -1,11 +1,11 @@
-# I Built the Missing Piece of the Uber Surveillance Fight
+# I Built the Missing Piece of the Ride-Hail Data Fight
 
 <!--
 Draft for shanethakkar.com — first-person, Shane's voice. Figures referenced below
 live in outputs/figures/ and become native interactive charts on the site.
 
 Frontmatter (for the MDX port):
-  title:    "I Built the Missing Piece of the Uber Surveillance Fight"
+  title:    "I Built the Missing Piece of the Ride-Hail Data Fight"
   dek:      "Cities and ride-hail companies have fought for years over trip data. I built
              the missing piece in the middle: a pipeline that gives regulators what they
              need without exposing the riders."
@@ -17,20 +17,19 @@ Structure note: organized by idea, not by pipeline stage. After the finding, the
 half is three "can you trust it?" stress tests — detection, the AI agent, the ledger.
 -->
 
-In March 2020, Uber sued the city of Los Angeles.
+In 2020, a fight broke out between Los Angeles and the ride-hail industry over trip data.
 
-The dispute was about data. Los Angeles wanted detailed, trip-level location data for every
-scooter and ride it permitted, collected through a standard called the Mobility Data
-Specification. Uber refused. Handing over where millions of riders started and ended their trips,
-the company argued, amounted to government surveillance. The city suspended the permit for Uber's
-JUMP bikes. Uber lost its appeal and eventually complied.
+Los Angeles wanted detailed, trip-level location data for every scooter and ride it permitted,
+collected through a standard called the Mobility Data Specification. Uber pushed back, arguing that
+handing over where millions of riders started and ended their trips put rider privacy at risk — a
+concern that regulators and courts are still working through.
 
 Both sides had a point. A city regulator has legitimate reasons to want trip data: it is how you
-check whether a company is dumping vehicles in poor neighborhoods, ignoring wheelchair requests, or
-breaking the terms of its permit. Riders have an equally legitimate reason not to want their exact
-movements sitting in a government database. The fight wasn't really about finding a villain — it was
-about a missing piece of engineering. Nobody had built the part in the middle that could give the
-regulator what it needs without exposing the rider.
+check whether vehicles are distributed fairly across neighborhoods, whether wheelchair requests are
+served, and whether a company is meeting the terms of its permit. Riders have an equally legitimate
+interest in not having their exact movements sitting in a government database. The fight wasn't
+about finding a villain — it was about a missing piece of engineering. Nobody had built the part in
+the middle that could give the regulator real oversight without exposing the rider.
 
 So I built it. I call it RideCloak.
 
