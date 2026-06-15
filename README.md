@@ -17,12 +17,19 @@ Built by Shane Thakkar. Python 3.12, runs as a CLI (`ridecloak`).
 
 ## Why this exists
 
-In March 2020, Uber sued Los Angeles over the Mobility Data Specification, arguing that
-mandated trip-level location sharing amounted to rider surveillance. The city had a legitimate
-claim to oversight data; riders had a legitimate claim to privacy. Today Uber submits trip
-records to the NYC Taxi & Limousine Commission every two weeks, and the public High-Volume FHV
-dataset is the *output* of exactly this kind of pipeline. RideCloak is the pipeline in the
-middle, built to be auditable and honest about what it can and cannot guarantee.
+Regulators and ride-hail platforms share a hard, recurring problem: oversight needs trip-level
+data, and trip-level data is sensitive. A city or agency has a legitimate need for records to
+verify safety, accessibility, and fair-service obligations; platforms and their riders have an
+equally legitimate interest in not exposing where individuals travel. The 2020 dispute between
+Los Angeles and ride-hail operators over the Mobility Data Specification — in which the operators
+pressed the case that mandated trip-level sharing put rider privacy at risk — is one well-known
+instance of regulators and industry weighing exactly this trade-off.
+
+It doesn't have to be either/or. Ride-hail companies already submit trip records to the NYC Taxi &
+Limousine Commission, and the public High-Volume FHV dataset is the *output* of exactly this kind
+of privacy processing. RideCloak is a reference implementation of the pipeline in the middle —
+built to serve the regulator's need for oversight and the rider's need for privacy at once,
+auditable and honest about what it can and cannot guarantee.
 
 ## The headline finding
 

@@ -101,6 +101,24 @@ Statuses: `Accepted` · `Open` (decision deferred, default noted) · `Superseded
   all-soft (rejected — drops the structural guarantee); weighted-toward-correctness (deferred —
   equal is the baseline; revisit if a dimension proves uninformative).
 
+## D-0014 — Public-facing framing stays neutral toward Uber
+- **Date:** 2026-06-15
+- **Status:** Accepted
+- **Decision:** Public artifacts (README, and by extension the shanethakkar.com article) describe
+  the oversight-vs-privacy tension without casting Uber as an antagonist. The 2020 LA / Mobility
+  Data Specification episode is framed as ride-hail operators pressing a legitimate rider-privacy
+  concern, with the regulator's oversight interest treated as equally legitimate. References to
+  "Uber trips" / "filter to Uber" stay — they are factual data-scope (the HVFHV dataset filtered
+  to Uber records), not a value judgment. README "Why this exists" was reworded accordingly.
+- **Why:** Shane's request — the repo is a public, recruiter-facing portfolio piece and must never
+  read as anti-Uber. The privacy-defender framing is also historically accurate: in that dispute
+  the operators argued *for* rider privacy.
+- **Affects:** `README.md` "Why this exists". The live article (`/articles/ridecloak`) still uses
+  the title "I Built the Missing Piece of the Uber Surveillance Fight" and the same narrative —
+  flagged to Shane; any change there pending his call so the two stay consistent.
+- **Alternatives:** Drop the Uber/MDS reference entirely (rejected — it is the genuine motivation
+  and anchors the article; neutral framing reaches the goal without losing the hook).
+
 ## D-0013 — Phase 2 PII metrics reported in- *and* out-of-distribution; not re-tuned
 - **Date:** 2026-06-12
 - **Status:** Accepted
